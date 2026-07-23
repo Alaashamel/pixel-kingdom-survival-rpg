@@ -1,15 +1,36 @@
-function App() {
-  return (
-    <div className="game-container">
-      <h1>
-        🎮 Pixel Kingdom
-      </h1>
+import { useEffect } from "react";
+import Phaser from "phaser";
+import config from "./game/config";
 
-      <button>
-        Start Game
-      </button>
-    </div>
-  );
+
+function App() {
+
+
+    useEffect(() => {
+
+
+        const game = new Phaser.Game(config);
+
+
+
+        return () => {
+
+            game.destroy(true);
+
+        };
+
+
+    }, []);
+
+
+
+    return (
+
+        <div id="game-container"></div>
+
+    );
+
 }
+
 
 export default App;

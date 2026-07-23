@@ -1,31 +1,33 @@
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+
 }
+
+
+html,
+body,
+#root {
+
+    width:100%;
+    height:100%;
+
+}
+
 
 body {
-  min-height: 100vh;
-  background: #111827;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: Arial, sans-serif;
+
+    overflow:hidden;
+    background:black;
+
 }
 
-.game-container {
-  text-align: center;
-  color: white;
-}
 
-.game-container h1 {
-  font-size: 3rem;
-  margin-bottom: 30px;
-}
+#game-container {
 
-.game-container button {
-  padding: 15px 40px;
-  font-size: 1.2rem;
-  border-radius: 12px;
-  cursor: pointer;
+    width:100%;
+    height:100%;
+
 }

@@ -3,6 +3,7 @@ import Player from "../entities/Player";
 import Enemy from "../entities/Enemy";
 import World from "../world/World";
 import CombatSystem from "../systems/CombatSystem";
+import WeatherSystem from "../systems/WeatherSystem";
 import Minimap from "../ui/Minimap";
 import LevelUpNotification from "../ui/LevelUpNotification";
 import InventoryPanel from "../ui/InventoryPanel";
@@ -16,6 +17,15 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.combatSystem = new CombatSystem(this);
+    this.weatherSystem = new WeatherSystem(this);
+    this.weatherSystem.create();
+
+    this.time.delayedCall(10000, () => {
+      this.weatherSystem.startRain();
+      this.time.delayedCall(15000, () => {
+        this.weatherSystem.stopRain();
+      });
+    });
 
     this.worldSystem = new World(this);
     this.worldSystem.create();
@@ -330,6 +340,7 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
+    this.weatherSystem.update(this.time.now);
     this.minimap.update(this.player, this.enemyGroup);
     this.updateHUD();
   }

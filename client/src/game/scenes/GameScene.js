@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import Player from "../entities/Player";
+import Enemy from "../entities/Enemy";
 import World from "../world/World";
+import CombatSystem from "../systems/CombatSystem";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -9,10 +11,29 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.combatSystem = new CombatSystem(this);
+
     this.worldSystem = new World(this);
     this.worldSystem.create();
 
     this.player = new Player(this, WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+
+    this.enemyGroup = this.physics.add.group();
+    this.spawnEnemies();
+
+    this.physics.add.collider(this.player, this.worldSystem.treeGroup);
+    this.physics.add.collider(this.player, this.worldSystem.rockGroup);
+    this.physics.add.collider(this.enemyGroup, this.worldSystem.treeGroup);
+    this.physics.add.collider(this.enemyGroup, this.worldSystem.rockGroup);
+    this.physics.add.collider(this.enemyGroup, this.enemyGroup);
+
+    this.physics.add.overlap(
+      this.player,
+      this.enemyGroup,
+      this.handlePlayerEnemyOverlap,
+      null,
+      this
+    );
 
     this.cameras.main.setBounds(0, 0, WORLD.WIDTH, WORLD.HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
@@ -26,7 +47,10 @@ export default class GameScene extends Phaser.Scene {
       right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
 
+    this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
     this.createHUD();
+    this.createLevelDisplay();
 
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
@@ -34,6 +58,101 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
+  }
+
+  spawnEnemies() {
+    const enemyConfigs = [
+      { health: 40, speed: 60, damage: 8, xpReward: 20, count: 15 },
+      { health: 70, speed: 80, damage: 12, xpReward: 35, count: 8 },
+      { health: 100, speed: 100, damage: 18, xpReward: 50, count: 4 },
+    ];
+
+    const margin = 300;
+    const centerX = WORLD.WIDTH / 2;
+    const centerY = WORLD.HEIGHT / 2;
+    const safeZone = 400;
+
+    enemyConfigs.forEach((config) => {
+      for (let i = 0; i < config.count; i++) {
+        let x, y;
+        let attempts = 0;
+
+        do {
+          x = Phaser.Math.Between(margin, WORLD.WIDTH - margin);
+          y = Phaser.Math.Between(margin, WORLD.HEIGHT - margin);
+          attempts++;
+        } while (
+          attempts < 50 &&
+          Phaser.Math.Distance.Between(x, y, centerX, centerY) < safeZone
+        );
+
+        const enemy = new Enemy(this, x, y, "slime", {
+          health: config.health,
+          speed: config.speed,
+          damage: config.damage,
+          xpReward: config.xpReward,
+        });
+
+        this.enemyGroup.add(enemy);
+      }
+    });
+  }
+
+  handlePlayerEnemyOverlap(player, enemy) {
+    if (!enemy.isAlive) return;
+
+    const now = this.time.now;
+    if (enemy.lastAttackTime && now - enemy.lastAttackTime < enemy.attackCooldown) return;
+
+    enemy.lastAttackTime = now;
+    enemy.dealDamage(player);
+
+    this.combatSystem.knockback(player, enemy, 150);
+  }
+
+  performAttack() {
+    if (!this.player.attack()) return;
+
+    this.combatSystem.createAttackEffect(
+      this.player.x,
+      this.player.y,
+      this.player.facing
+    );
+
+    const hitbox = this.combatSystem.getAttackHitbox(
+      this.player.x,
+      this.player.y,
+      this.player.facing,
+      this.player.attackRange
+    );
+
+    this.enemyGroup.getChildren().forEach((enemy) => {
+      if (!enemy.isAlive) return;
+
+      const dist = Phaser.Math.Distance.Between(
+        hitbox.x, hitbox.y,
+        enemy.x, enemy.y
+      );
+
+      if (dist < hitbox.radius + 12) {
+        const isCritical = Math.random() < 0.15;
+        const damage = isCritical
+          ? Math.floor(this.player.attackDamage * 1.8)
+          : this.player.attackDamage;
+
+        enemy.takeDamage(damage);
+        this.combatSystem.knockback(enemy, this.player, 180);
+
+        if (isCritical) {
+          this.cameras.main.shake(50, 0.005);
+        }
+      }
+    });
+
+    this.player.isAttacking = true;
+    this.time.delayedCall(200, () => {
+      this.player.isAttacking = false;
+    });
   }
 
   createHUD() {
@@ -70,27 +189,45 @@ export default class GameScene extends Phaser.Scene {
     this.xpBar = createBar(16 + barGap * 3, COLORS.XP_BAR, "XP");
 
     hudContainer.add([
-      this.healthBar.bg,
-      this.healthBar.fill,
-      this.healthBar.text,
-      this.manaBar.bg,
-      this.manaBar.fill,
-      this.manaBar.text,
-      this.staminaBar.bg,
-      this.staminaBar.fill,
-      this.staminaBar.text,
-      this.xpBar.bg,
-      this.xpBar.fill,
-      this.xpBar.text,
+      this.healthBar.bg, this.healthBar.fill, this.healthBar.text,
+      this.manaBar.bg, this.manaBar.fill, this.manaBar.text,
+      this.staminaBar.bg, this.staminaBar.fill, this.staminaBar.text,
+      this.xpBar.bg, this.xpBar.fill, this.xpBar.text,
     ]);
 
-    const titleText = this.add.text(20, 20, "Pixel Kingdom", {
-      fontSize: "16px",
-      fill: "#ffffff",
+    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD/Arrows: Move | SPACE: Attack | SHIFT: Sprint | ESC: Pause", {
+      fontSize: "10px",
+      fill: "#888888",
       fontFamily: "monospace",
     });
-    titleText.setScrollFactor(0);
-    titleText.setDepth(100);
+    controlsText.setOrigin(0, 1);
+    controlsText.setScrollFactor(0);
+    controlsText.setDepth(100);
+  }
+
+  createLevelDisplay() {
+    this.levelText = this.add.text(this.cameras.main.width - 16, 16, "Lv. 1", {
+      fontSize: "16px",
+      fill: "#00e676",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 3,
+    });
+    this.levelText.setOrigin(1, 0);
+    this.levelText.setScrollFactor(0);
+    this.levelText.setDepth(100);
+
+    this.enemyCountText = this.add.text(this.cameras.main.width - 16, 36, "Enemies: 27", {
+      fontSize: "12px",
+      fill: "#ff6666",
+      fontFamily: "monospace",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    this.enemyCountText.setOrigin(1, 0);
+    this.enemyCountText.setScrollFactor(0);
+    this.enemyCountText.setDepth(100);
   }
 
   togglePause() {
@@ -133,22 +270,31 @@ export default class GameScene extends Phaser.Scene {
 
     this.player.move(this.cursors, this.wasd);
 
+    if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
+      this.performAttack();
+    }
+
+    this.enemyGroup.getChildren().forEach((enemy) => {
+      if (enemy.isAlive) {
+        enemy.chaseTarget(this.player);
+        enemy.updateHealthBar();
+      }
+    });
+
     this.updateHUD();
   }
 
   updateHUD() {
     const maxBarWidth = 156;
 
-    const healthPercent = this.player.health / this.player.maxHealth;
-    this.healthBar.fill.width = maxBarWidth * healthPercent;
+    this.healthBar.fill.width = maxBarWidth * (this.player.health / this.player.maxHealth);
+    this.manaBar.fill.width = maxBarWidth * (this.player.mana / this.player.maxMana);
+    this.staminaBar.fill.width = maxBarWidth * (this.player.stamina / this.player.maxStamina);
+    this.xpBar.fill.width = maxBarWidth * (this.player.xp / this.player.xpToNextLevel);
 
-    const manaPercent = this.player.mana / this.player.maxMana;
-    this.manaBar.fill.width = maxBarWidth * manaPercent;
+    this.levelText.setText(`Lv. ${this.player.level}`);
 
-    const staminaPercent = this.player.stamina / this.player.maxStamina;
-    this.staminaBar.fill.width = maxBarWidth * staminaPercent;
-
-    const xpPercent = this.player.xp / this.player.xpToNextLevel;
-    this.xpBar.fill.width = maxBarWidth * xpPercent;
+    const aliveEnemies = this.enemyGroup.getChildren().filter((e) => e.isAlive).length;
+    this.enemyCountText.setText(`Enemies: ${aliveEnemies}`);
   }
 }

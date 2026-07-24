@@ -1,4 +1,4 @@
-# 🎮 Pixel Kingdom: Survival RPG
+# Pixel Kingdom: Survival RPG
 
 ## Overview
 
@@ -6,40 +6,68 @@ Pixel Kingdom is a browser-based survival RPG game.
 
 The player fights enemies, collects experience, upgrades abilities and defeats bosses.
 
----
-
 ## Platforms
 
 - Desktop Browser
 - Mobile Browser
 
----
+## Core Systems
 
-## Main Features
+### Player
+- Movement (WASD + Arrow Keys, mobile touch)
+- Sprint and dash
+- Melee attack (light and heavy)
+- Health, mana, stamina
+- Experience and leveling
+- Inventory and equipment
 
-- Player movement
+### Combat
+- Melee combat
 - Enemy waves
-- Combat system
-- Weapons
-- Skills
-- Inventory
 - Boss battles
-- Achievements
+- Damage system
+- Knockback
 
----
+### World
+- Procedural environment
+- Tilemap-based terrain
+- Trees, rocks, flowers
+- Rivers and bridges
+- Villages and dungeons
+- Boss arenas
+- Secret areas
+
+### Enemies
+- Basic enemies with AI
+- Elite enemies
+- Boss enemies
+- Loot drops
+
+### UI
+- HUD (health, mana, stamina bars)
+- Inventory panel
+- Minimap
+- Pause menu
+- Settings
+- Mobile touch controls
+
+### Progression
+- Level system
+- Skill tree
+- Weapon upgrades
+- Armor system
+- Achievements
 
 ## Technology Stack
 
 Frontend:
+- React (JavaScript)
+- Phaser 3
+- Vite
 
-- React
-- TypeScript
-- Phaser
-- Tailwind CSS
-
-Backend:
-
+Backend (planned):
 - Node.js
 - Express
 - PostgreSQL
 - Prisma
+- Socket.IO (multiplayer)

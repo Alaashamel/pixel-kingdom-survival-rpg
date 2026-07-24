@@ -12,7 +12,15 @@ export default class AssetGenerator {
     this.generateTree();
     this.generateRock();
     this.generateFlowers();
+    this.generateWaterTiles();
+    this.generateBridge();
+    this.generatePathTiles();
+    this.generateHouse();
+    this.generateDungeonEntrance();
+    this.generateBush();
+    this.generateStump();
     this.generateEnemySlime();
+    this.generateEnemySkeleton();
     this.generateParticles();
     this.generateUIElements();
   }
@@ -148,6 +156,183 @@ export default class AssetGenerator {
     g.fillRect(20, 16, 2, 2);
 
     g.generateTexture("slime", 32, 32);
+    g.destroy();
+  }
+
+  generateWaterTiles() {
+    const waterColors = [
+      { name: "water_0", color: COLORS.WATER },
+      { name: "water_1", color: COLORS.WATER_DARK },
+    ];
+
+    const s = 32;
+    waterColors.forEach(({ name, color }) => {
+      const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+      g.fillStyle(color);
+      g.fillRect(0, 0, s, s);
+
+      g.fillStyle(0xffffff, 0.15);
+      for (let i = 0; i < 3; i++) {
+        const wx = Phaser.Math.Between(4, s - 8);
+        const wy = Phaser.Math.Between(4, s - 4);
+        g.fillRect(wx, wy, 8, 2);
+      }
+
+      g.generateTexture(name, s, s);
+      g.destroy();
+    });
+  }
+
+  generateBridge() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(COLORS.WOOD);
+    g.fillRect(0, 0, 64, 32);
+
+    g.fillStyle(COLORS.WOOD_DARK);
+    for (let i = 0; i < 64; i += 8) {
+      g.fillRect(i, 0, 2, 32);
+    }
+
+    g.lineStyle(2, COLORS.WOOD_DARK);
+    g.strokeRect(0, 0, 64, 32);
+
+    g.fillStyle(COLORS.WOOD_DARK);
+    g.fillRect(0, 0, 64, 3);
+    g.fillRect(0, 29, 64, 3);
+
+    g.generateTexture("bridge", 64, 32);
+    g.destroy();
+  }
+
+  generatePathTiles() {
+    const pathColors = [
+      { name: "path_0", color: COLORS.DIRT },
+      { name: "path_1", color: 0xa1887f },
+    ];
+
+    const s = 32;
+    pathColors.forEach(({ name, color }) => {
+      const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+      g.fillStyle(color);
+      g.fillRect(0, 0, s, s);
+
+      g.fillStyle(0x000000, 0.08);
+      for (let i = 0; i < 5; i++) {
+        const px = Phaser.Math.Between(2, s - 4);
+        const py = Phaser.Math.Between(2, s - 4);
+        g.fillRect(px, py, 3, 2);
+      }
+
+      g.generateTexture(name, s, s);
+      g.destroy();
+    });
+  }
+
+  generateHouse() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0x8d6e63);
+    g.fillRect(4, 16, 24, 16);
+
+    g.fillStyle(0x6d4c41);
+    g.fillTriangle(0, 16, 16, 0, 32, 16);
+
+    g.fillStyle(0x5d4037);
+    g.fillTriangle(0, 16, 16, 2, 32, 16);
+
+    g.fillStyle(COLORS.WOOD_DARK);
+    g.fillRect(12, 22, 8, 10);
+
+    g.fillStyle(0x42a5f5);
+    g.fillRect(6, 20, 5, 5);
+    g.fillRect(21, 20, 5, 5);
+
+    g.lineStyle(1, 0x3e2723);
+    g.strokeRect(6, 20, 5, 5);
+    g.strokeRect(21, 20, 5, 5);
+
+    g.generateTexture("house", 32, 32);
+    g.destroy();
+  }
+
+  generateDungeonEntrance() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0x424242);
+    g.fillRect(0, 8, 32, 24);
+
+    g.fillStyle(0x616161);
+    g.fillRect(0, 8, 32, 4);
+
+    g.fillStyle(0x212121);
+    g.fillRect(8, 14, 16, 18);
+
+    g.fillStyle(0x1a1a1a);
+    g.fillCircle(16, 20, 6);
+
+    g.fillStyle(0xff6600);
+    g.fillCircle(10, 16, 2);
+    g.fillCircle(22, 16, 2);
+
+    g.generateTexture("dungeon_entrance", 32, 32);
+    g.destroy();
+  }
+
+  generateBush() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0x2e7d32);
+    g.fillCircle(12, 14, 10);
+
+    g.fillStyle(0x388e3c);
+    g.fillCircle(8, 12, 7);
+
+    g.fillStyle(0x43a047);
+    g.fillCircle(16, 10, 6);
+
+    g.generateTexture("bush", 24, 24);
+    g.destroy();
+  }
+
+  generateStump() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(COLORS.WOOD);
+    g.fillCircle(12, 12, 10);
+
+    g.fillStyle(COLORS.WOOD_DARK);
+    g.fillCircle(12, 12, 7);
+
+    g.fillStyle(0xa1887f);
+    g.fillCircle(12, 12, 4);
+
+    g.generateTexture("stump", 24, 24);
+    g.destroy();
+  }
+
+  generateEnemySkeleton() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0xeeeeee);
+    g.fillRect(10, 4, 12, 20);
+
+    g.fillStyle(0xdddddd);
+    g.fillCircle(16, 6, 6);
+
+    g.fillStyle(0x000000);
+    g.fillRect(12, 5, 3, 3);
+    g.fillRect(18, 5, 3, 3);
+
+    g.fillStyle(0xcccccc);
+    g.fillRect(12, 10, 2, 8);
+    g.fillRect(18, 10, 2, 8);
+
+    g.fillStyle(0xdddddd);
+    g.fillRect(12, 24, 3, 6);
+    g.fillRect(17, 24, 3, 6);
+
+    g.generateTexture("skeleton", 32, 32);
     g.destroy();
   }
 

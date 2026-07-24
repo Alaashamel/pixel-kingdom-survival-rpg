@@ -1,36 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Phaser from "phaser";
 import config from "./game/config";
 
-
 function App() {
+  const gameRef = useRef(null);
 
+  useEffect(() => {
+    if (gameRef.current) return;
 
-    useEffect(() => {
+    gameRef.current = new Phaser.Game(config);
 
+    return () => {
+      gameRef.current.destroy(true);
+      gameRef.current = null;
+    };
+  }, []);
 
-        const game = new Phaser.Game(config);
-
-
-
-        return () => {
-
-            game.destroy(true);
-
-        };
-
-
-    }, []);
-
-
-
-    return (
-
-        <div id="game-container"></div>
-
-    );
-
+  return <div id="game-container"></div>;
 }
-
 
 export default App;

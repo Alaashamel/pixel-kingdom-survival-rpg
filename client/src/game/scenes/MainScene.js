@@ -1,67 +1,34 @@
 import Phaser from "phaser";
 import Player from "../entities/Player";
-
+import World from "../world/World";
 
 class MainScene extends Phaser.Scene {
+  constructor() {
+    super("MainScene");
+  }
 
+  create() {
+    this.worldSystem = new World(this);
+    this.worldSystem.create();
 
-    constructor() {
+    this.player = new Player(this, 2500, 2500);
 
-        super("MainScene");
+    this.cameras.main.setBounds(0, 0, 5000, 5000);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.roundPixels = true;
 
-    }
+    this.cursors = this.input.keyboard.createCursorKeys();
 
+    this.add.text(20, 20, "Pixel Kingdom", {
+      fontSize: "28px",
+      fill: "#ffffff",
+      fontFamily: "monospace",
+    }).setScrollFactor(0);
+  }
 
-
-    create() {
-
-
-        this.player = new Player(
-            this,
-            400,
-            300
-        );
-
-
-        this.cursors =
-            this.input.keyboard.createCursorKeys();
-
-
-
-        this.cameras.main.startFollow(
-            this.player
-        );
-
-
-
-        this.add.text(
-            20,
-            20,
-            "Player System Loaded",
-            {
-                fontSize:"24px",
-                fill:"#ffffff"
-            }
-        );
-
-
-    }
-
-
-
-    update() {
-
-
-        this.player.move(
-            this.cursors
-        );
-
-
-    }
-
-
+  update() {
+    this.player.move(this.cursors);
+  }
 }
-
-
 
 export default MainScene;

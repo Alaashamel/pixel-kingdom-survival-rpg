@@ -1,8 +1,9 @@
 {
-  "name": "client",
+  "name": "pixel-kingdom-client",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "description": "Pixel Kingdom: Survival RPG - Browser game client",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "phaser": "^3.90.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

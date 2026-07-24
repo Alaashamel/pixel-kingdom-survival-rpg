@@ -30,6 +30,7 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.isAttacking = false;
 
     this.facing = "down";
+    this.isAlive = true;
 
     scene.physics.add.existing(this);
     this.body.setCollideWorldBounds(true);
@@ -163,6 +164,7 @@ class Player extends Phaser.GameObjects.Rectangle {
   }
 
   die() {
+    this.isAlive = false;
     this.scene.physics.pause();
     this.setTint(0xff0000);
 
@@ -172,6 +174,7 @@ class Player extends Phaser.GameObjects.Rectangle {
       this.health = this.maxHealth;
       this.mana = this.maxMana;
       this.stamina = this.maxStamina;
+      this.isAlive = true;
       this.setPosition(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
       this.clearTint();
       this.scene.physics.resume();

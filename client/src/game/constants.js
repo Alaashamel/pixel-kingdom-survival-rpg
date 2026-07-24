@@ -1,0 +1,60 @@
+export const GAME_WIDTH = 800;
+export const GAME_HEIGHT = 600;
+
+export const WORLD = {
+  WIDTH: 4000,
+  HEIGHT: 4000,
+  TILE_SIZE: 32,
+};
+
+export const PLAYER = {
+  SPEED: 200,
+  SPRINT_SPEED: 320,
+  WIDTH: 32,
+  HEIGHT: 32,
+  MAX_HEALTH: 100,
+  MAX_MANA: 50,
+  MAX_STAMINA: 100,
+  STAMINA_REGEN: 0.5,
+  ATTACK_RANGE: 48,
+  ATTACK_DAMAGE: 25,
+  ATTACK_COOLDOWN: 400,
+};
+
+export const COLORS = {
+  BACKGROUND: 0x111827,
+  GRASS: 0x4caf50,
+  GRASS_DARK: 0x388e3c,
+  GRASS_LIGHT: 0x66bb6a,
+  DIRT: 0x8d6e63,
+  WATER: 0x42a5f5,
+  WATER_DARK: 0x1e88e5,
+  ROCK: 0x9e9e9e,
+  ROCK_DARK: 0x757575,
+  WOOD: 0x795548,
+  WOOD_DARK: 0x5d4037,
+  LEAF: 0x2e7d32,
+  LEAF_DARK: 0x1b5e20,
+  FLOWER_RED: 0xef5350,
+  FLOWER_YELLOW: 0xffee58,
+  FLOWER_BLUE: 0x42a5f5,
+  PLAYER: 0x00e676,
+  PLAYER_DARK: 0x00c853,
+  ENEMY_RED: 0xf44336,
+  ENEMY_DARK: 0xd32f2f,
+  UI_BG: 0x1a1a2e,
+  UI_BORDER: 0x16213e,
+  UI_TEXT: 0xffffff,
+  UI_ACCENT: 0xe94560,
+  HEALTH_BAR: 0xef5350,
+  MANA_BAR: 0x42a5f5,
+  STAMINA_BAR: 0xffee58,
+  XP_BAR: 0x00e676,
+};
+
+export const SCENES = {
+  BOOT: "BootScene",
+  PRELOAD: "PreloadScene",
+  MENU: "MenuScene",
+  GAME: "GameScene",
+};

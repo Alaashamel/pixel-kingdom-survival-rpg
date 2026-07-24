@@ -31,6 +31,7 @@ class Player extends Phaser.GameObjects.Rectangle {
 
     this.facing = "down";
     this.isAlive = true;
+    this.onLevelUp = null;
 
     scene.physics.add.existing(this);
     this.body.setCollideWorldBounds(true);
@@ -161,6 +162,10 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.scene.time.delayedCall(300, () => {
       this.clearTint();
     });
+
+    if (this.onLevelUp) {
+      this.onLevelUp(this.level);
+    }
   }
 
   die() {

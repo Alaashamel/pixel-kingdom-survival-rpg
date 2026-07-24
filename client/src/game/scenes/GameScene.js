@@ -3,6 +3,9 @@ import Player from "../entities/Player";
 import Enemy from "../entities/Enemy";
 import World from "../world/World";
 import CombatSystem from "../systems/CombatSystem";
+import Minimap from "../ui/Minimap";
+import LevelUpNotification from "../ui/LevelUpNotification";
+import InventoryPanel from "../ui/InventoryPanel";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -17,6 +20,9 @@ export default class GameScene extends Phaser.Scene {
     this.worldSystem.create();
 
     this.player = new Player(this, WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+    this.player.onLevelUp = (level) => {
+      this.levelUpNotification.show(level);
+    };
 
     this.enemyGroup = this.physics.add.group();
     this.spawnEnemies();
@@ -48,13 +54,27 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.inventoryKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
 
     this.createHUD();
-    this.createLevelDisplay();
+
+    this.minimap = new Minimap(this);
+    this.levelUpNotification = new LevelUpNotification(this);
+    this.inventoryPanel = new InventoryPanel(this);
 
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
-      this.togglePause();
+      if (this.inventoryPanel.isOpen) {
+        this.inventoryPanel.close();
+      } else {
+        this.togglePause();
+      }
+    });
+
+    this.input.keyboard.on("keydown-I", () => {
+      if (!this.isPaused) {
+        this.inventoryPanel.toggle();
+      }
     });
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
@@ -195,17 +215,6 @@ export default class GameScene extends Phaser.Scene {
       this.xpBar.bg, this.xpBar.fill, this.xpBar.text,
     ]);
 
-    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD/Arrows: Move | SPACE: Attack | SHIFT: Sprint | ESC: Pause", {
-      fontSize: "10px",
-      fill: "#888888",
-      fontFamily: "monospace",
-    });
-    controlsText.setOrigin(0, 1);
-    controlsText.setScrollFactor(0);
-    controlsText.setDepth(100);
-  }
-
-  createLevelDisplay() {
     this.levelText = this.add.text(this.cameras.main.width - 16, 16, "Lv. 1", {
       fontSize: "16px",
       fill: "#00e676",
@@ -228,6 +237,15 @@ export default class GameScene extends Phaser.Scene {
     this.enemyCountText.setOrigin(1, 0);
     this.enemyCountText.setScrollFactor(0);
     this.enemyCountText.setDepth(100);
+
+    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Attack | SHIFT: Sprint | I: Inventory | ESC: Pause", {
+      fontSize: "10px",
+      fill: "#888888",
+      fontFamily: "monospace",
+    });
+    controlsText.setOrigin(0, 1);
+    controlsText.setScrollFactor(0);
+    controlsText.setDepth(100);
   }
 
   togglePause() {
@@ -243,7 +261,7 @@ export default class GameScene extends Phaser.Scene {
       this.pauseOverlay.setScrollFactor(0);
       this.pauseOverlay.setDepth(200);
 
-      this.pauseText = this.add.text(width / 2, height / 2, "PAUSED", {
+      this.pauseText = this.add.text(width / 2, height / 2 - 20, "PAUSED", {
         fontSize: "48px",
         fill: "#ffffff",
         fontFamily: "monospace",
@@ -251,6 +269,15 @@ export default class GameScene extends Phaser.Scene {
       this.pauseText.setOrigin(0.5);
       this.pauseText.setScrollFactor(0);
       this.pauseText.setDepth(201);
+
+      this.pauseHint = this.add.text(width / 2, height / 2 + 30, "Press ESC to resume", {
+        fontSize: "14px",
+        fill: "#888888",
+        fontFamily: "monospace",
+      });
+      this.pauseHint.setOrigin(0.5);
+      this.pauseHint.setScrollFactor(0);
+      this.pauseHint.setDepth(201);
     } else {
       this.physics.resume();
 
@@ -261,6 +288,10 @@ export default class GameScene extends Phaser.Scene {
       if (this.pauseText) {
         this.pauseText.destroy();
         this.pauseText = null;
+      }
+      if (this.pauseHint) {
+        this.pauseHint.destroy();
+        this.pauseHint = null;
       }
     }
   }
@@ -281,6 +312,7 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
+    this.minimap.update(this.player, this.enemyGroup);
     this.updateHUD();
   }
 

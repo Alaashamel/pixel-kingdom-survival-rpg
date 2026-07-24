@@ -6,6 +6,7 @@ import CombatSystem from "../systems/CombatSystem";
 import Minimap from "../ui/Minimap";
 import LevelUpNotification from "../ui/LevelUpNotification";
 import InventoryPanel from "../ui/InventoryPanel";
+import MobileControls from "../ui/MobileControls";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -61,6 +62,7 @@ export default class GameScene extends Phaser.Scene {
     this.minimap = new Minimap(this);
     this.levelUpNotification = new LevelUpNotification(this);
     this.inventoryPanel = new InventoryPanel(this);
+    this.mobileControls = new MobileControls(this);
 
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
@@ -299,9 +301,25 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.isPaused) return;
 
-    this.player.move(this.cursors, this.wasd);
+    const mobileInput = this.mobileControls.getMovementInput();
+    if (mobileInput && mobileInput.magnitude > 0.2) {
+      this.player.body.setVelocity(
+        mobileInput.x * this.player.speed,
+        mobileInput.y * this.player.speed
+      );
+      if (mobileInput.x < -0.3) this.player.facing = "left";
+      else if (mobileInput.x > 0.3) this.player.facing = "right";
+      if (mobileInput.y < -0.3) this.player.facing = "up";
+      else if (mobileInput.y > 0.3) this.player.facing = "down";
+      this.player.updateFacing();
+    } else {
+      this.player.move(this.cursors, this.wasd);
+    }
 
-    if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.attackKey) ||
+      this.mobileControls.isAttackPressed()
+    ) {
       this.performAttack();
     }
 

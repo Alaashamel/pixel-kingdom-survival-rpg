@@ -63,14 +63,6 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.enemyGroup, this.worldSystem.rockGroup);
     this.physics.add.collider(this.enemyGroup, this.enemyGroup);
 
-    this.physics.add.overlap(
-      this.player,
-      this.enemyGroup,
-      this.handlePlayerEnemyOverlap,
-      null,
-      this
-    );
-
     this.cameras.main.setBounds(0, 0, WORLD.WIDTH, WORLD.HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.roundPixels = true;
@@ -255,27 +247,6 @@ export default class GameScene extends Phaser.Scene {
     player.takeDamage(boss.attackDamage);
     this.playSound("playDamage");
     this.combatSystem.knockback(player, boss, 200);
-  }
-
-  handlePlayerEnemyOverlap(player, enemy) {
-    if (!enemy.isAlive) return;
-
-    const now = this.time.now;
-    if (enemy.lastAttackTime && now - enemy.lastAttackTime < enemy.attackCooldown) return;
-
-    enemy.lastAttackTime = now;
-    enemy.dealDamage(player);
-    this.playSound("playDamage");
-
-    this.tweens.add({
-      targets: enemy,
-      scaleX: 1.3,
-      scaleY: 0.7,
-      duration: 80,
-      yoyo: true,
-    });
-
-    this.combatSystem.knockback(player, enemy, 120);
   }
 
   performAttack() {
@@ -504,6 +475,21 @@ export default class GameScene extends Phaser.Scene {
       if (enemy.isAlive) {
         enemy.chaseTarget(this.player);
         enemy.updateHealthBar();
+
+        if (this.player.isAlive) {
+          const dist = Phaser.Math.Distance.Between(
+            enemy.x, enemy.y, this.player.x, this.player.y
+          );
+          if (dist < 28) {
+            const now = this.time.now;
+            if (!enemy.lastAttackTime || now - enemy.lastAttackTime >= enemy.attackCooldown) {
+              enemy.lastAttackTime = now;
+              enemy.dealDamage(this.player);
+              this.playSound("playDamage");
+              this.combatSystem.knockback(this.player, enemy, 120);
+            }
+          }
+        }
       }
     });
 

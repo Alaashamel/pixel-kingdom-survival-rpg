@@ -1,12 +1,10 @@
 export default class AudioSystem {
-  constructor(scene) {
-    this.scene = scene;
+  constructor() {
     this.ctx = null;
     this.masterGain = null;
     this.musicGain = null;
     this.sfxGain = null;
     this.isMuted = false;
-    this.isResumed = false;
     this.musicVolume = 0.3;
     this.sfxVolume = 0.5;
     this.musicOscillators = [];
@@ -41,11 +39,10 @@ export default class AudioSystem {
     if (this.ctx.state === "suspended") {
       this.ctx.resume().catch(() => {});
     }
-    this.isResumed = true;
   }
 
   _canPlay() {
-    return this.ctx && !this.isMuted && this.isResumed;
+    return this.ctx && !this.isMuted && this.ctx.state === "running";
   }
 
   playAttack() {
@@ -182,7 +179,8 @@ export default class AudioSystem {
   }
 
   startMusic() {
-    if (!this.ctx || this.isMuted || this.isMusicPlaying || !this.isResumed) return;
+    if (!this.ctx || this.isMuted || this.isMusicPlaying) return;
+    if (this.ctx.state !== "running") return;
     this.isMusicPlaying = true;
     this.playMusicLoop();
   }

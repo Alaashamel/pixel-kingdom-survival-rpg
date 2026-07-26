@@ -94,10 +94,10 @@ export default class CombatSystem {
 
   getAttackHitbox(x, y, facing, range) {
     const angle = this.getFacingAngle(facing);
-    const hitX = x + Math.cos(angle) * range;
-    const hitY = y + Math.sin(angle) * range;
+    const hitX = x + Math.cos(angle) * (range * 0.4);
+    const hitY = y + Math.sin(angle) * (range * 0.4);
 
-    return new Phaser.Geom.Circle(hitX, hitY, range * 0.6);
+    return new Phaser.Geom.Circle(hitX, hitY, range * 0.9);
   }
 
   getFacingAngle(facing) {

@@ -13,7 +13,7 @@ export default class MenuScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(COLORS.BACKGROUND);
 
     if (!this.game.audioSystem) {
-      this.game.audioSystem = new AudioSystem(this);
+      this.game.audioSystem = new AudioSystem();
       this.game.audioSystem.init();
     }
 

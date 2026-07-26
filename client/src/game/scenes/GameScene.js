@@ -8,6 +8,8 @@ import Minimap from "../ui/Minimap";
 import LevelUpNotification from "../ui/LevelUpNotification";
 import InventoryPanel from "../ui/InventoryPanel";
 import MobileControls from "../ui/MobileControls";
+import SaveSystem from "../systems/SaveSystem";
+import SaveLoadUI from "../ui/SaveLoadUI";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -78,9 +80,35 @@ export default class GameScene extends Phaser.Scene {
     this.inventoryPanel = new InventoryPanel(this);
     this.mobileControls = new MobileControls(this);
 
+    if (!this.game.saveSystem) {
+      this.game.saveSystem = new SaveSystem();
+    }
+    this.saveLoadUI = new SaveLoadUI(this, this.game.saveSystem);
+
+    this.game.saveSystem.startAutoSave(
+      () => ({
+        health: this.player.health,
+        maxHealth: this.player.maxHealth,
+        mana: this.player.mana,
+        maxMana: this.player.maxMana,
+        stamina: this.player.stamina,
+        maxStamina: this.player.maxStamina,
+        level: this.player.level,
+        xp: this.player.xp,
+        xpToNextLevel: this.player.xpToNextLevel,
+        attackDamage: this.player.attackDamage,
+        x: this.player.x,
+        y: this.player.y,
+      }),
+      () => ({}),
+      0
+    );
+
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
-      if (this.inventoryPanel.isOpen) {
+      if (this.saveLoadUI.isOpen) {
+        this.saveLoadUI.close();
+      } else if (this.inventoryPanel.isOpen) {
         this.inventoryPanel.close();
       } else {
         this.togglePause();
@@ -88,8 +116,14 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.input.keyboard.on("keydown-I", () => {
-      if (!this.isPaused) {
+      if (!this.isPaused && !this.saveLoadUI.isOpen) {
         this.inventoryPanel.toggle();
+      }
+    });
+
+    this.input.keyboard.on("keydown-F5", () => {
+      if (!this.isPaused) {
+        this.saveLoadUI.open();
       }
     });
 

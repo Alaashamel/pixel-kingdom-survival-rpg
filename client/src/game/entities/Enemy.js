@@ -165,6 +165,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
           this.target.gainXP(this.xpReward);
         }
 
+        if (this.scene.game.questSystem) {
+          this.scene.game.questSystem.updateProgress("kill", this.enemyType || "slime");
+        }
+
         this.dropLoot();
         this.destroy();
       },
@@ -202,6 +206,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
           this.scene.player.heal(20);
           if (this.scene.combatSystem) {
             this.scene.combatSystem.showHealNumber(this.scene.player.x, this.scene.player.y, 20);
+          }
+          if (this.scene.game.questSystem) {
+            this.scene.game.questSystem.updateProgress("collect", "health");
           }
         } else if (type === "mana") {
           this.scene.player.mana = Math.min(

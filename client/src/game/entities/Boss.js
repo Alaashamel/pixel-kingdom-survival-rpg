@@ -212,6 +212,10 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
     this.isAlive = false;
     this.body.setVelocity(0, 0);
 
+    if (this.scene.game.questSystem) {
+      this.scene.game.questSystem.updateProgress("kill", "boss");
+    }
+
     this.dropLoot();
 
     this.scene.tweens.add({

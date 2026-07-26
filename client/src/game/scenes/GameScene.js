@@ -14,6 +14,8 @@ import SaveLoadUI from "../ui/SaveLoadUI";
 import SkillTree from "../systems/SkillTree";
 import SkillTreeUI from "../ui/SkillTreeUI";
 import ParticleSystem from "../systems/ParticleSystem";
+import QuestSystem from "../systems/QuestSystem";
+import QuestUI from "../ui/QuestUI";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -114,6 +116,15 @@ export default class GameScene extends Phaser.Scene {
     }
     this.skillTreeUI = new SkillTreeUI(this, this.game.skillTree);
 
+    if (!this.game.questSystem) {
+      this.game.questSystem = new QuestSystem();
+      this.game.questSystem.acceptQuest("firstSteps");
+      this.game.questSystem.acceptQuest("survivor");
+      this.game.questSystem.acceptQuest("collector");
+    }
+    this.questUI = new QuestUI(this, this.game.questSystem);
+    this.questUI.createTracker();
+
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
       if (this.skillTreeUI.isOpen) {
@@ -134,11 +145,21 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.input.keyboard.on("keydown-T", () => {
-      if (!this.isPaused && !this.saveLoadUI.isOpen && !this.inventoryPanel.isOpen) {
+      if (!this.isPaused && !this.saveLoadUI.isOpen && !this.inventoryPanel.isOpen && !this.questUI.isLogOpen) {
         if (this.skillTreeUI.isOpen) {
           this.skillTreeUI.close();
         } else {
           this.skillTreeUI.open();
+        }
+      }
+    });
+
+    this.input.keyboard.on("keydown-L", () => {
+      if (!this.isPaused && !this.saveLoadUI.isOpen && !this.inventoryPanel.isOpen && !this.skillTreeUI.isOpen) {
+        if (this.questUI.isLogOpen) {
+          this.questUI.closeLog();
+        } else {
+          this.questUI.openLog();
         }
       }
     });

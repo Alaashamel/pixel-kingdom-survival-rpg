@@ -254,6 +254,19 @@ export default class GameScene extends Phaser.Scene {
 
     this.playSound("playAttack");
 
+    const nearestEnemy = this.findNearestEnemy();
+
+    if (nearestEnemy) {
+      const angle = Phaser.Math.Angle.Between(
+        this.player.x, this.player.y, nearestEnemy.x, nearestEnemy.y
+      );
+      if (angle > -0.75 && angle < 0.75) this.player.facing = "right";
+      else if (angle > 0.75 && angle < 2.35) this.player.facing = "down";
+      else if (angle < -0.75 && angle > -2.35) this.player.facing = "up";
+      else this.player.facing = "left";
+      this.player.updateFacing();
+    }
+
     this.combatSystem.createAttackEffect(
       this.player.x,
       this.player.y,
@@ -323,6 +336,22 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(200, () => {
       this.player.isAttacking = false;
     });
+  }
+
+  findNearestEnemy() {
+    let nearest = null;
+    let minDist = this.player.attackRange * 2;
+    this.enemyGroup.getChildren().forEach((enemy) => {
+      if (!enemy.isAlive) return;
+      const dist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y, enemy.x, enemy.y
+      );
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = enemy;
+      }
+    });
+    return nearest;
   }
 
   createHUD() {
@@ -449,6 +478,17 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.isPaused) return;
 
+    if (!this.player.isAlive) {
+      this.enemyGroup.getChildren().forEach((enemy) => {
+        if (enemy.isAlive) {
+          enemy.body.setVelocity(0, 0);
+          enemy.updateHealthBar();
+        }
+      });
+      this.updateHUD();
+      return;
+    }
+
     const mobileInput = this.mobileControls.getMovementInput();
     if (mobileInput && mobileInput.magnitude > 0.2) {
       this.player.body.setVelocity(
@@ -476,18 +516,25 @@ export default class GameScene extends Phaser.Scene {
         enemy.chaseTarget(this.player);
         enemy.updateHealthBar();
 
-        if (this.player.isAlive) {
-          const dist = Phaser.Math.Distance.Between(
-            enemy.x, enemy.y, this.player.x, this.player.y
-          );
-          if (dist < 28) {
-            const now = this.time.now;
-            if (!enemy.lastAttackTime || now - enemy.lastAttackTime >= enemy.attackCooldown) {
-              enemy.lastAttackTime = now;
-              enemy.dealDamage(this.player);
-              this.playSound("playDamage");
-              this.combatSystem.knockback(this.player, enemy, 120);
-            }
+        const dist = Phaser.Math.Distance.Between(
+          enemy.x, enemy.y, this.player.x, this.player.y
+        );
+        if (dist < 28) {
+          const now = this.time.now;
+          if (!enemy.lastAttackTime || now - enemy.lastAttackTime >= enemy.attackCooldown) {
+            enemy.lastAttackTime = now;
+            enemy.dealDamage(this.player);
+            this.playSound("playDamage");
+
+            this.tweens.add({
+              targets: enemy,
+              scaleX: 1.3,
+              scaleY: 0.7,
+              duration: 80,
+              yoyo: true,
+            });
+
+            this.combatSystem.knockback(this.player, enemy, 120);
           }
         }
       }
@@ -503,10 +550,18 @@ export default class GameScene extends Phaser.Scene {
   updateHUD() {
     const maxBarWidth = 156;
 
-    this.healthBar.fill.width = maxBarWidth * (this.player.health / this.player.maxHealth);
-    this.manaBar.fill.width = maxBarWidth * (this.player.mana / this.player.maxMana);
-    this.staminaBar.fill.width = maxBarWidth * (this.player.stamina / this.player.maxStamina);
-    this.xpBar.fill.width = maxBarWidth * (this.player.xp / this.player.xpToNextLevel);
+    if (this.player.maxHealth > 0) {
+      this.healthBar.fill.width = maxBarWidth * Math.max(0, this.player.health / this.player.maxHealth);
+    }
+    if (this.player.maxMana > 0) {
+      this.manaBar.fill.width = maxBarWidth * Math.max(0, this.player.mana / this.player.maxMana);
+    }
+    if (this.player.maxStamina > 0) {
+      this.staminaBar.fill.width = maxBarWidth * Math.max(0, this.player.stamina / this.player.maxStamina);
+    }
+    if (this.player.xpToNextLevel > 0) {
+      this.xpBar.fill.width = maxBarWidth * Math.max(0, this.player.xp / this.player.xpToNextLevel);
+    }
 
     this.levelText.setText(`Lv. ${this.player.level}`);
 

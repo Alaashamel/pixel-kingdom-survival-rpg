@@ -42,6 +42,8 @@ class Player extends Phaser.GameObjects.Rectangle {
 
     this.manaRegen = 0.15;
     this.manaRegenRate = 15;
+    this.healthRegen = 0.03;
+    this.healthRegenRate = 20;
 
     scene.physics.add.existing(this);
     this.body.setCollideWorldBounds(true);
@@ -166,6 +168,9 @@ class Player extends Phaser.GameObjects.Rectangle {
     if (this.mana < this.maxMana) {
       this.mana = Math.min(this.maxMana, this.mana + this.manaRegen * (delta / this.manaRegenRate));
     }
+    if (this.health < this.maxHealth) {
+      this.health = Math.min(this.maxHealth, this.health + this.healthRegen * (delta / this.healthRegenRate));
+    }
   }
 
   gainXP(amount) {
@@ -205,22 +210,53 @@ class Player extends Phaser.GameObjects.Rectangle {
   }
 
   die() {
+    if (!this.isAlive) return;
     this.isAlive = false;
-    this.scene.physics.pause();
+    this.body.setVelocity(0, 0);
+    this.body.enable = false;
     this.setFillStyle(0xff0000);
 
     this.scene.cameras.main.shake(500, 0.02);
 
     if (this.onDeath) this.onDeath();
 
-    this.scene.time.delayedCall(1500, () => {
+    const { width, height } = this.scene.cameras.main;
+    this.deathOverlay = this.scene.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+    this.deathOverlay.setScrollFactor(0);
+    this.deathOverlay.setDepth(200);
+
+    this.deathText = this.scene.add.text(width / 2, height / 2 - 20, "YOU DIED", {
+      fontSize: "48px",
+      fill: "#ff4444",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+    });
+    this.deathText.setOrigin(0.5);
+    this.deathText.setScrollFactor(0);
+    this.deathText.setDepth(201);
+
+    this.deathHint = this.scene.add.text(width / 2, height / 2 + 30, "Respawning...", {
+      fontSize: "14px",
+      fill: "#888888",
+      fontFamily: "monospace",
+    });
+    this.deathHint.setOrigin(0.5);
+    this.deathHint.setScrollFactor(0);
+    this.deathHint.setDepth(201);
+
+    this.scene.time.delayedCall(2000, () => {
+      if (this.deathOverlay) { this.deathOverlay.destroy(); this.deathOverlay = null; }
+      if (this.deathText) { this.deathText.destroy(); this.deathText = null; }
+      if (this.deathHint) { this.deathHint.destroy(); this.deathHint = null; }
+
       this.health = this.maxHealth;
       this.mana = this.maxMana;
       this.stamina = this.maxStamina;
       this.isAlive = true;
+      this.body.enable = true;
       this.setPosition(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+      this.body.setVelocity(0, 0);
       this.setFillStyle(this.baseColor);
-      this.scene.physics.resume();
     });
   }
 }

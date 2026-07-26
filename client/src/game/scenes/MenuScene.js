@@ -17,6 +17,12 @@ export default class MenuScene extends Phaser.Scene {
       this.game.audioSystem.init();
     }
 
+    this.input.once("pointerdown", () => {
+      if (this.game.audioSystem) {
+        this.game.audioSystem.resume();
+      }
+    });
+
     for (let i = 0; i < 200; i++) {
       const x = Phaser.Math.Between(0, width);
       const y = Phaser.Math.Between(0, height);

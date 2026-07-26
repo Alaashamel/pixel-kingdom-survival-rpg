@@ -29,6 +29,12 @@ export default class GameScene extends Phaser.Scene {
     this.weatherSystem = new WeatherSystem(this);
     this.weatherSystem.create();
 
+    this.playSound = (method) => {
+      if (this.game.audioSystem) {
+        try { this.game.audioSystem[method](); } catch { /* ignore */ }
+      }
+    };
+
     this.time.delayedCall(10000, () => {
       this.weatherSystem.startRain();
       this.time.delayedCall(15000, () => {
@@ -42,10 +48,10 @@ export default class GameScene extends Phaser.Scene {
     this.player = new Player(this, WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
     this.player.onLevelUp = (level) => {
       this.levelUpNotification.show(level);
-      this.game.audioSystem.playLevelUp();
+      this.playSound("playLevelUp");
     };
     this.player.onDeath = () => {
-      this.game.audioSystem.playDeath();
+      this.playSound("playDeath");
     };
 
     this.enemyGroup = this.physics.add.group();
@@ -172,7 +178,21 @@ export default class GameScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
-    this.game.audioSystem.startMusic();
+    this.audioStarted = false;
+    this.input.once("pointerdown", () => {
+      if (!this.audioStarted && this.game.audioSystem) {
+        this.game.audioSystem.resume();
+        this.game.audioSystem.startMusic();
+        this.audioStarted = true;
+      }
+    });
+    this.input.keyboard.once("keydown", () => {
+      if (!this.audioStarted && this.game.audioSystem) {
+        this.game.audioSystem.resume();
+        this.game.audioSystem.startMusic();
+        this.audioStarted = true;
+      }
+    });
   }
 
   spawnEnemies() {
@@ -237,7 +257,7 @@ export default class GameScene extends Phaser.Scene {
 
     boss.lastAttackTime = now;
     player.takeDamage(boss.attackDamage);
-    this.game.audioSystem.playDamage();
+    this.playSound("playDamage");
     this.combatSystem.knockback(player, boss, 200);
   }
 
@@ -249,7 +269,7 @@ export default class GameScene extends Phaser.Scene {
 
     enemy.lastAttackTime = now;
     enemy.dealDamage(player);
-    this.game.audioSystem.playDamage();
+    this.playSound("playDamage");
 
     this.combatSystem.knockback(player, enemy, 150);
   }
@@ -257,7 +277,7 @@ export default class GameScene extends Phaser.Scene {
   performAttack() {
     if (!this.player.attack()) return;
 
-    this.game.audioSystem.playAttack();
+    this.playSound("playAttack");
 
     this.combatSystem.createAttackEffect(
       this.player.x,
@@ -296,11 +316,11 @@ export default class GameScene extends Phaser.Scene {
         this.particleSystem.emitDamageParticles(enemy.x, enemy.y, damage, isCritical);
 
         if (isCritical) {
-          this.game.audioSystem.playCriticalHit();
+          this.playSound("playCriticalHit");
           this.cameras.main.shake(50, 0.005);
           this.particleSystem.screenFlash(0xff0000, 150);
         } else {
-          this.game.audioSystem.playHit();
+          this.playSound("playHit");
         }
       }
     });
@@ -315,10 +335,10 @@ export default class GameScene extends Phaser.Scene {
         this.boss.takeDamage(dmg);
         this.combatSystem.knockback(this.boss, this.player, 200);
         if (isCrit) {
-          this.game.audioSystem.playCriticalHit();
+          this.playSound("playCriticalHit");
           this.cameras.main.shake(80, 0.01);
         } else {
-          this.game.audioSystem.playHit();
+          this.playSound("playHit");
         }
         this.combatSystem.showDamageNumber(this.boss.x, this.boss.y, dmg, isCrit);
       }

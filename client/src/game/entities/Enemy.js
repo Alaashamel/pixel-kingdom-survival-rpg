@@ -16,6 +16,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.attackCooldown = config.attackCooldown || 1000;
     this.xpReward = config.xpReward || 25;
     this.detectionRange = config.detectionRange || 200;
+    this.enemyType = config.enemyType || "slime";
 
     this.lastAttackTime = 0;
     this.isAlive = true;
@@ -52,7 +53,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   updateHealthBar() {
-    if (!this.healthBarBg || !this.healthBarFill) return;
+    if (!this.isAlive || !this.healthBarBg || !this.healthBarFill) return;
 
     this.healthBarBg.setPosition(this.x, this.y - 22);
     this.healthBarFill.setPosition(this.x - 14, this.y - 22);
@@ -70,7 +71,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   chaseTarget(target) {
-    if (!this.isAlive || !target) return;
+    if (!this.isAlive || !target || !target.isAlive) return;
 
     this.target = target;
     const dist = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
@@ -95,6 +96,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   tryAttack(target) {
+    if (!this.isAlive || !target || !target.isAlive) return;
+
     const now = this.scene.time.now;
     if (now - this.lastAttackTime < this.attackCooldown) return;
 
@@ -107,17 +110,17 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       duration: 100,
       yoyo: true,
       onComplete: () => {
-        if (target && target.isAlive !== false) {
-          const dist = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
-          if (dist <= this.attackRange * 1.2) {
-            this.dealDamage(target);
-          }
+        if (!this.isAlive || !target || !target.isAlive) return;
+        const dist = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
+        if (dist <= this.attackRange * 1.2) {
+          this.dealDamage(target);
         }
       },
     });
   }
 
   dealDamage(target) {
+    if (!this.isAlive || !target || !target.isAlive) return;
     if (target.takeDamage) {
       target.takeDamage(this.damage);
     }
@@ -145,14 +148,22 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   die() {
+    if (!this.isAlive) return;
     this.isAlive = false;
 
     this.body.setVelocity(0, 0);
     this.body.enable = false;
 
+    if (this.healthBarBg) this.healthBarBg.setVisible(false);
+    if (this.healthBarFill) this.healthBarFill.setVisible(false);
+
     if (this.scene.particleSystem) {
-      this.scene.particleSystem.emitDeathParticles(this.x, this.y, this.fillColor);
+      this.scene.particleSystem.emitDeathParticles(this.x, this.y, 0xff4444);
     }
+
+    const savedScene = this.scene;
+    const savedTarget = this.target;
+    const xpReward = this.xpReward;
 
     this.scene.tweens.add({
       targets: this,
@@ -161,21 +172,24 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       scaleY: 1.5,
       duration: 300,
       onComplete: () => {
-        if (this.target && this.target.gainXP) {
-          this.target.gainXP(this.xpReward);
+        if (savedTarget && savedTarget.gainXP) {
+          savedTarget.gainXP(xpReward);
         }
 
-        if (this.scene.game.questSystem) {
-          this.scene.game.questSystem.updateProgress("kill", this.enemyType || "slime");
+        if (savedScene.game.questSystem) {
+          savedScene.game.questSystem.updateProgress("kill", this.enemyType);
         }
 
-        this.dropLoot();
-        this.destroy();
+        this.dropLoot(savedScene);
+        this.remove();
       },
     });
   }
 
-  dropLoot() {
+  dropLoot(scene) {
+    const s = scene || this.scene;
+    if (!s || !s.player) return;
+
     const lootTypes = ["health", "mana", "xp"];
     const lootChance = 0.4;
 
@@ -185,11 +199,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     const color = type === "health" ? COLORS.HEALTH_BAR :
                   type === "mana" ? COLORS.MANA_BAR : COLORS.XP_BAR;
 
-    const loot = this.scene.add.circle(this.x, this.y, 6, color);
+    const loot = s.add.circle(this.x, this.y, 6, color);
     loot.setDepth(5);
-    this.scene.physics.add.existing(loot);
+    s.physics.add.existing(loot);
 
-    this.scene.tweens.add({
+    s.tweens.add({
       targets: loot,
       y: loot.y - 10,
       duration: 500,
@@ -198,37 +212,51 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       ease: "Sine.easeInOut",
     });
 
-    this.scene.physics.add.overlap(
-      this.scene.player,
+    const playerRef = s.player;
+    const audioRef = s.game.audioSystem;
+    const questRef = s.game.questSystem;
+    const combatRef = s.combatSystem;
+
+    s.physics.add.overlap(
+      playerRef,
       loot,
       () => {
+        if (!loot.active) return;
+
         if (type === "health") {
-          this.scene.player.heal(20);
-          if (this.scene.combatSystem) {
-            this.scene.combatSystem.showHealNumber(this.scene.player.x, this.scene.player.y, 20);
+          playerRef.heal(20);
+          if (combatRef) {
+            combatRef.showHealNumber(playerRef.x, playerRef.y, 20);
           }
-          if (this.scene.game.questSystem) {
-            this.scene.game.questSystem.updateProgress("collect", "health");
+          if (questRef) {
+            questRef.updateProgress("collect", "health");
           }
         } else if (type === "mana") {
-          this.scene.player.mana = Math.min(
-            this.scene.player.maxMana,
-            this.scene.player.mana + 15
+          playerRef.mana = Math.min(
+            playerRef.maxMana,
+            playerRef.mana + 15
           );
         } else if (type === "xp") {
-          this.scene.player.gainXP(15);
+          playerRef.gainXP(15);
         }
-        if (this.scene.game.audioSystem) {
-          this.scene.game.audioSystem.playPickup();
+        if (audioRef) {
+          audioRef.playPickup();
         }
         loot.destroy();
       }
     );
   }
 
+  remove() {
+    if (this.scene && this.scene.enemyGroup) {
+      this.scene.enemyGroup.remove(this, true, true);
+    }
+    this.destroy();
+  }
+
   destroy() {
-    if (this.healthBarBg) this.healthBarBg.destroy();
-    if (this.healthBarFill) this.healthBarFill.destroy();
+    if (this.healthBarBg) { this.healthBarBg.destroy(); this.healthBarBg = null; }
+    if (this.healthBarFill) { this.healthBarFill.destroy(); this.healthBarFill = null; }
     super.destroy();
   }
 }

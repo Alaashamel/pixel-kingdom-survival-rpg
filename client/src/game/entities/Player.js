@@ -94,20 +94,16 @@ class Player extends Phaser.GameObjects.Rectangle {
   updateFacing() {
     switch (this.facing) {
       case "left":
-        this.setRotation(0);
-        this.setFlipX(true);
+        this.setScale(-1, 1);
         break;
       case "right":
-        this.setRotation(0);
-        this.setFlipX(false);
+        this.setScale(1, 1);
         break;
       case "up":
-        this.setRotation(-Math.PI / 2);
-        this.setFlipX(false);
+        this.setScale(1, -1);
         break;
       case "down":
-        this.setRotation(Math.PI / 2);
-        this.setFlipX(false);
+        this.setScale(1, 1);
         break;
     }
   }

@@ -26,13 +26,15 @@ export default class BootScene extends Phaser.Scene {
     });
     loadingText.setOrigin(0.5);
 
-    this.time.delayedCall(300, () => {
+    try {
       const generator = new AssetGenerator(this);
       generator.generateAll();
+    } catch {
+      loadingText.setText("Asset generation error, continuing...");
+    }
 
-      this.time.delayedCall(200, () => {
-        this.scene.start(SCENES.PRELOAD);
-      });
+    this.time.delayedCall(500, () => {
+      this.scene.start(SCENES.PRELOAD);
     });
   }
 }

@@ -18,42 +18,15 @@ export default class PreloadScene extends Phaser.Scene {
     });
     title.setOrigin(0.5);
 
-    const barBg = this.add.rectangle(width / 2, height / 2 + 10, 304, 24, 0x333333);
-    barBg.setStrokeStyle(2, 0x666666);
-
-    const bar = this.add.rectangle(width / 2 - 150, height / 2 + 10, 0, 16, COLORS.UI_ACCENT);
-    bar.setOrigin(0, 0.5);
-
-    const percentText = this.add.text(width / 2, height / 2 + 10, "0%", {
-      fontSize: "14px",
-      fill: "#ffffff",
+    const loadingText = this.add.text(width / 2, height / 2 + 10, "Loading...", {
+      fontSize: "16px",
+      fill: "#aaaaaa",
       fontFamily: "monospace",
     });
-    percentText.setOrigin(0.5);
+    loadingText.setOrigin(0.5);
 
-    const assets = this.textures.getKeys();
-    const totalAssets = assets.length;
-    let loaded = 0;
-
-    const loadNext = () => {
-      if (loaded >= totalAssets) {
-        percentText.setText("100%");
-        bar.width = 300;
-
-        this.time.delayedCall(500, () => {
-          this.scene.start(SCENES.MENU);
-        });
-        return;
-      }
-
-      const progress = loaded / totalAssets;
-      bar.width = 300 * progress;
-      percentText.setText(`${Math.floor(progress * 100)}%`);
-      loaded++;
-
-      this.time.delayedCall(50, loadNext);
-    };
-
-    this.time.delayedCall(300, loadNext);
+    this.time.delayedCall(800, () => {
+      this.scene.start(SCENES.MENU);
+    });
   }
 }

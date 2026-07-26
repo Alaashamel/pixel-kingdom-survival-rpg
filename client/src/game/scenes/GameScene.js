@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import Player from "../entities/Player";
 import Enemy from "../entities/Enemy";
+import Boss from "../entities/Boss";
 import World from "../world/World";
 import CombatSystem from "../systems/CombatSystem";
 import WeatherSystem from "../systems/WeatherSystem";
@@ -187,6 +188,34 @@ export default class GameScene extends Phaser.Scene {
         this.enemyGroup.add(enemy);
       }
     });
+
+    this.spawnBoss();
+  }
+
+  spawnBoss() {
+    const bossX = 500;
+    const bossY = 500;
+    this.boss = new Boss(this, bossX, bossY);
+
+    this.physics.add.overlap(
+      this.player,
+      this.boss,
+      this.handlePlayerBossOverlap,
+      null,
+      this
+    );
+  }
+
+  handlePlayerBossOverlap(player, boss) {
+    if (!boss.isAlive) return;
+
+    const now = this.time.now;
+    if (boss.lastAttackTime && now - boss.lastAttackTime < boss.attackCooldown) return;
+
+    boss.lastAttackTime = now;
+    player.takeDamage(boss.attackDamage);
+    this.game.audioSystem.playDamage();
+    this.combatSystem.knockback(player, boss, 200);
   }
 
   handlePlayerEnemyOverlap(player, enemy) {
@@ -245,6 +274,25 @@ export default class GameScene extends Phaser.Scene {
         }
       }
     });
+
+    if (this.boss && this.boss.isAlive) {
+      const bossDist = Phaser.Math.Distance.Between(
+        hitbox.x, hitbox.y, this.boss.x, this.boss.y
+      );
+      if (bossDist < hitbox.radius + 20) {
+        const isCrit = Math.random() < (this.player.critChance || 0.15);
+        const dmg = isCrit ? Math.floor(this.player.attackDamage * 1.8) : this.player.attackDamage;
+        this.boss.takeDamage(dmg);
+        this.combatSystem.knockback(this.boss, this.player, 200);
+        if (isCrit) {
+          this.game.audioSystem.playCriticalHit();
+          this.cameras.main.shake(80, 0.01);
+        } else {
+          this.game.audioSystem.playHit();
+        }
+        this.combatSystem.showDamageNumber(this.boss.x, this.boss.y, dmg, isCrit);
+      }
+    }
 
     this.player.isAttacking = true;
     this.time.delayedCall(200, () => {

@@ -34,6 +34,11 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.onLevelUp = null;
     this.onDeath = null;
 
+    this.critChance = 0;
+    this.damageReduction = 0;
+    this.lootBonus = 0;
+    this.lastStandReady = true;
+
     scene.physics.add.existing(this);
     this.body.setCollideWorldBounds(true);
     this.body.setSize(24, 24);
@@ -124,7 +129,19 @@ class Player extends Phaser.GameObjects.Rectangle {
   }
 
   takeDamage(amount) {
-    this.health = Math.max(0, this.health - amount);
+    let finalDamage = Math.floor(amount * (1 - this.damageReduction));
+    if (finalDamage < 1) finalDamage = 1;
+
+    if (this.health - finalDamage <= 0 && this.lastStandReady && this.scene.game.skillTree?.hasSkill("lastStand")) {
+      this.health = 1;
+      this.lastStandReady = false;
+      this.scene.time.delayedCall(60000, () => { this.lastStandReady = true; });
+      this.setTint(0xffff00);
+      this.scene.time.delayedCall(300, () => { this.clearTint(); });
+      return;
+    }
+
+    this.health = Math.max(0, this.health - finalDamage);
 
     this.setTint(0xff0000);
     this.scene.time.delayedCall(100, () => {
@@ -158,6 +175,10 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.maxMana += 5;
     this.mana = this.maxMana;
     this.attackDamage += 2;
+
+    if (this.scene.game.skillTree) {
+      this.scene.game.skillTree.addSkillPoints(1);
+    }
 
     this.setTint(0xffee58);
     this.scene.time.delayedCall(300, () => {

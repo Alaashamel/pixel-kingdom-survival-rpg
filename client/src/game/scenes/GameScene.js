@@ -10,6 +10,8 @@ import InventoryPanel from "../ui/InventoryPanel";
 import MobileControls from "../ui/MobileControls";
 import SaveSystem from "../systems/SaveSystem";
 import SaveLoadUI from "../ui/SaveLoadUI";
+import SkillTree from "../systems/SkillTree";
+import SkillTreeUI from "../ui/SkillTreeUI";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -104,9 +106,16 @@ export default class GameScene extends Phaser.Scene {
       0
     );
 
+    if (!this.game.skillTree) {
+      this.game.skillTree = new SkillTree();
+    }
+    this.skillTreeUI = new SkillTreeUI(this, this.game.skillTree);
+
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
-      if (this.saveLoadUI.isOpen) {
+      if (this.skillTreeUI.isOpen) {
+        this.skillTreeUI.close();
+      } else if (this.saveLoadUI.isOpen) {
         this.saveLoadUI.close();
       } else if (this.inventoryPanel.isOpen) {
         this.inventoryPanel.close();
@@ -116,8 +125,18 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.input.keyboard.on("keydown-I", () => {
-      if (!this.isPaused && !this.saveLoadUI.isOpen) {
+      if (!this.isPaused && !this.saveLoadUI.isOpen && !this.skillTreeUI.isOpen) {
         this.inventoryPanel.toggle();
+      }
+    });
+
+    this.input.keyboard.on("keydown-T", () => {
+      if (!this.isPaused && !this.saveLoadUI.isOpen && !this.inventoryPanel.isOpen) {
+        if (this.skillTreeUI.isOpen) {
+          this.skillTreeUI.close();
+        } else {
+          this.skillTreeUI.open();
+        }
       }
     });
 

@@ -7,6 +7,7 @@ class Player extends Phaser.GameObjects.Rectangle {
 
     scene.add.existing(this);
 
+    this.baseColor = 0x00e676;
     this.speed = PLAYER.SPEED;
     this.sprintSpeed = PLAYER.SPRINT_SPEED;
     this.isSprinting = false;
@@ -132,16 +133,16 @@ class Player extends Phaser.GameObjects.Rectangle {
       this.health = 1;
       this.lastStandReady = false;
       this.scene.time.delayedCall(60000, () => { this.lastStandReady = true; });
-      this.setTint(0xffff00);
-      this.scene.time.delayedCall(300, () => { this.clearTint(); });
+      this.setFillStyle(0xffff00);
+      this.scene.time.delayedCall(300, () => { this.setFillStyle(this.baseColor); });
       return;
     }
 
     this.health = Math.max(0, this.health - finalDamage);
 
-    this.setTint(0xff0000);
+    this.setFillStyle(0xff0000);
     this.scene.time.delayedCall(100, () => {
-      this.clearTint();
+      this.setFillStyle(this.baseColor);
     });
 
     if (this.health <= 0) {
@@ -180,12 +181,12 @@ class Player extends Phaser.GameObjects.Rectangle {
       this.scene.game.skillTree.addSkillPoints(1);
     }
 
-    this.setTint(0xffee58);
+    this.setFillStyle(0xffee58);
     if (this.scene.particleSystem) {
       this.scene.particleSystem.emitLevelUpParticles(this.x, this.y);
     }
     this.scene.time.delayedCall(300, () => {
-      this.clearTint();
+      this.setFillStyle(this.baseColor);
     });
 
     if (this.onLevelUp) {
@@ -196,7 +197,7 @@ class Player extends Phaser.GameObjects.Rectangle {
   die() {
     this.isAlive = false;
     this.scene.physics.pause();
-    this.setTint(0xff0000);
+    this.setFillStyle(0xff0000);
 
     this.scene.cameras.main.shake(500, 0.02);
 
@@ -208,7 +209,7 @@ class Player extends Phaser.GameObjects.Rectangle {
       this.stamina = this.maxStamina;
       this.isAlive = true;
       this.setPosition(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
-      this.clearTint();
+      this.setFillStyle(this.baseColor);
       this.scene.physics.resume();
     });
   }

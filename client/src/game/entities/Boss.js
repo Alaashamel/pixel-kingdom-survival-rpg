@@ -8,6 +8,7 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    this.baseColor = 0x8b0000;
     this.maxHealth = 500;
     this.health = this.maxHealth;
     this.attackDamage = 30;
@@ -117,7 +118,7 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
     this.isCharging = true;
     this.chargeTarget = { x: player.x, y: player.y };
 
-    this.setTint(0xffff00);
+    this.setFillStyle(0xffff00);
     this.scene.time.delayedCall(500, () => {
       if (this.isCharging) {
         const angle = Phaser.Math.Angle.Between(
@@ -144,7 +145,7 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
     if (dist < 20) {
       this.isCharging = false;
       this.body.setVelocity(0, 0);
-      this.clearTint();
+      this.setFillStyle(this.baseColor);
       this.chargeTarget = null;
     }
   }
@@ -153,7 +154,7 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
     this.lastAoeTime = time;
     this.body.setVelocity(0, 0);
 
-    this.setTint(0xff8800);
+    this.setFillStyle(0xff8800);
     const indicator = this.scene.add.circle(this.x, this.y, this.attackRange, 0xff0000, 0.3);
     indicator.setDepth(5);
 
@@ -175,7 +176,7 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
             );
           }
         }
-        this.clearTint();
+        this.setFillStyle(this.baseColor);
       },
     });
   }
@@ -184,9 +185,9 @@ export default class Boss extends Phaser.GameObjects.Rectangle {
     if (!this.isAlive) return;
 
     this.health -= amount;
-    this.setTint(0xff0000);
+    this.setFillStyle(0xff0000);
     this.scene.time.delayedCall(100, () => {
-      this.clearTint();
+      this.setFillStyle(this.baseColor);
     });
 
     if (this.health <= 0) {

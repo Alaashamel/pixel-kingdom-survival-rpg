@@ -109,8 +109,8 @@ export default class Minimap {
     this.enemyDots = [];
 
     if (enemies) {
-      enemies.getChildren().forEach((enemy) => {
-        if (!enemy.isAlive) return;
+      [...enemies.getChildren()].forEach((enemy) => {
+        if (!enemy || !enemy.isAlive) return;
 
         const ex = mapX + (enemy.x / WORLD.WIDTH) * this.size;
         const ey = mapY + (enemy.y / WORLD.HEIGHT) * this.size;

@@ -285,7 +285,7 @@ export default class GameScene extends Phaser.Scene {
       this.player.attackRange
     );
 
-    this.enemyGroup.getChildren().forEach((enemy) => {
+    [...this.enemyGroup.getChildren()].forEach((enemy) => {
       if (!enemy.isAlive) return;
 
       const dist = Phaser.Math.Distance.Between(
@@ -479,8 +479,8 @@ export default class GameScene extends Phaser.Scene {
     if (this.isPaused) return;
 
     if (!this.player.isAlive) {
-      this.enemyGroup.getChildren().forEach((enemy) => {
-        if (enemy.isAlive) {
+      [...this.enemyGroup.getChildren()].forEach((enemy) => {
+        if (enemy && enemy.isAlive && enemy.body && enemy.body.enable) {
           enemy.body.setVelocity(0, 0);
           enemy.updateHealthBar();
         }
@@ -511,31 +511,31 @@ export default class GameScene extends Phaser.Scene {
       this.performAttack();
     }
 
-    this.enemyGroup.getChildren().forEach((enemy) => {
-      if (enemy.isAlive) {
-        enemy.chaseTarget(this.player);
-        enemy.updateHealthBar();
+    const enemies = [...this.enemyGroup.getChildren()];
+    enemies.forEach((enemy) => {
+      if (!enemy || !enemy.isAlive || !enemy.body || !enemy.body.enable) return;
+      enemy.chaseTarget(this.player);
+      enemy.updateHealthBar();
 
-        const dist = Phaser.Math.Distance.Between(
-          enemy.x, enemy.y, this.player.x, this.player.y
-        );
-        if (dist < 28) {
-          const now = this.time.now;
-          if (!enemy.lastAttackTime || now - enemy.lastAttackTime >= enemy.attackCooldown) {
-            enemy.lastAttackTime = now;
-            enemy.dealDamage(this.player);
-            this.playSound("playDamage");
+      const dist = Phaser.Math.Distance.Between(
+        enemy.x, enemy.y, this.player.x, this.player.y
+      );
+      if (dist < 28) {
+        const now = this.time.now;
+        if (!enemy.lastAttackTime || now - enemy.lastAttackTime >= enemy.attackCooldown) {
+          enemy.lastAttackTime = now;
+          enemy.dealDamage(this.player);
+          this.playSound("playDamage");
 
-            this.tweens.add({
-              targets: enemy,
-              scaleX: 1.3,
-              scaleY: 0.7,
-              duration: 80,
-              yoyo: true,
-            });
+          this.tweens.add({
+            targets: enemy,
+            scaleX: 1.3,
+            scaleY: 0.7,
+            duration: 80,
+            yoyo: true,
+          });
 
-            this.combatSystem.knockback(this.player, enemy, 120);
-          }
+          this.combatSystem.knockback(this.player, enemy, 120);
         }
       }
     });

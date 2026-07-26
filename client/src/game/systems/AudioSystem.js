@@ -42,7 +42,11 @@ export default class AudioSystem {
   }
 
   _canPlay() {
-    return this.ctx && !this.isMuted && this.ctx.state === "running";
+    if (!this.ctx || this.isMuted) return false;
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume().catch(() => {});
+    }
+    return true;
   }
 
   playAttack() {
@@ -180,7 +184,7 @@ export default class AudioSystem {
 
   startMusic() {
     if (!this.ctx || this.isMuted || this.isMusicPlaying) return;
-    if (this.ctx.state !== "running") return;
+    this.resume();
     this.isMusicPlaying = true;
     this.playMusicLoop();
   }

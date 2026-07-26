@@ -178,7 +178,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     loot.setDepth(5);
     s.physics.add.existing(loot);
 
-    s.tweens.add({
+    const lootTween = s.tweens.add({
       targets: loot,
       y: loot.y - 10,
       duration: 500,
@@ -197,6 +197,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       loot,
       () => {
         if (!loot.active) return;
+
+        if (lootTween && lootTween.isPlaying()) {
+          lootTween.stop();
+        }
+        if (loot.body) loot.body.enable = false;
 
         if (type === "health") {
           playerRef.heal(20);
@@ -223,6 +228,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   remove() {
+    if (!this.isAlive) return;
+    this.isAlive = false;
     if (this.scene && this.scene.enemyGroup) {
       this.scene.enemyGroup.remove(this, true, true);
     }

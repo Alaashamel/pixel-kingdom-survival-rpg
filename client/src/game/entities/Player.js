@@ -154,7 +154,11 @@ class Player extends Phaser.GameObjects.Rectangle {
   }
 
   heal(amount) {
+    const actualHeal = Math.min(amount, this.maxHealth - this.health);
     this.health = Math.min(this.maxHealth, this.health + amount);
+    if (this.scene.particleSystem && actualHeal > 0) {
+      this.scene.particleSystem.emitHealParticles(this.x, this.y, actualHeal);
+    }
   }
 
   gainXP(amount) {
@@ -181,6 +185,9 @@ class Player extends Phaser.GameObjects.Rectangle {
     }
 
     this.setTint(0xffee58);
+    if (this.scene.particleSystem) {
+      this.scene.particleSystem.emitLevelUpParticles(this.x, this.y);
+    }
     this.scene.time.delayedCall(300, () => {
       this.clearTint();
     });

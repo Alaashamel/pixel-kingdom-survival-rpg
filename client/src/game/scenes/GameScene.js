@@ -13,6 +13,7 @@ import SaveSystem from "../systems/SaveSystem";
 import SaveLoadUI from "../ui/SaveLoadUI";
 import SkillTree from "../systems/SkillTree";
 import SkillTreeUI from "../ui/SkillTreeUI";
+import ParticleSystem from "../systems/ParticleSystem";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -22,6 +23,7 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.combatSystem = new CombatSystem(this);
+    this.particleSystem = new ParticleSystem(this);
     this.weatherSystem = new WeatherSystem(this);
     this.weatherSystem.create();
 
@@ -241,6 +243,11 @@ export default class GameScene extends Phaser.Scene {
       this.player.y,
       this.player.facing
     );
+    this.particleSystem.emitAttackParticles(
+      this.player.x,
+      this.player.y,
+      this.player.facing
+    );
 
     const hitbox = this.combatSystem.getAttackHitbox(
       this.player.x,
@@ -265,10 +272,12 @@ export default class GameScene extends Phaser.Scene {
 
         enemy.takeDamage(damage);
         this.combatSystem.knockback(enemy, this.player, 180);
+        this.particleSystem.emitDamageParticles(enemy.x, enemy.y, damage, isCritical);
 
         if (isCritical) {
           this.game.audioSystem.playCriticalHit();
           this.cameras.main.shake(50, 0.005);
+          this.particleSystem.screenFlash(0xff0000, 150);
         } else {
           this.game.audioSystem.playHit();
         }

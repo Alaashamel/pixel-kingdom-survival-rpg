@@ -150,12 +150,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.body.setVelocity(0, 0);
     this.body.enable = false;
 
-    if (this.scene.combatSystem) {
-      this.scene.combatSystem.knockback(
-        { x: this.x, y: this.y, body: { setVelocity: () => {} } },
-        this.target || this,
-        0
-      );
+    if (this.scene.particleSystem) {
+      this.scene.particleSystem.emitDeathParticles(this.x, this.y, this.fillColor);
     }
 
     this.scene.tweens.add({

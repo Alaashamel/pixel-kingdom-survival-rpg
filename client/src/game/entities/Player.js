@@ -1,81 +1,193 @@
 import Phaser from "phaser";
-
+import { PLAYER, WORLD } from "../constants.js";
 
 class Player extends Phaser.GameObjects.Rectangle {
+  constructor(scene, x, y) {
+    super(scene, x, y, 32, 32, 0x00e676);
 
+    scene.add.existing(this);
 
-    constructor(scene, x, y) {
+    this.speed = PLAYER.SPEED;
+    this.sprintSpeed = PLAYER.SPRINT_SPEED;
+    this.isSprinting = false;
 
+    this.health = PLAYER.MAX_HEALTH;
+    this.maxHealth = PLAYER.MAX_HEALTH;
+    this.mana = PLAYER.MAX_MANA;
+    this.maxMana = PLAYER.MAX_MANA;
+    this.stamina = PLAYER.MAX_STAMINA;
+    this.maxStamina = PLAYER.MAX_STAMINA;
+    this.staminaRegen = PLAYER.STAMINA_REGEN;
 
-        super(
-            scene,
-            x,
-            y,
-            40,
-            40,
-            0x00ff00
-        );
+    this.level = 1;
+    this.xp = 0;
+    this.xpToNextLevel = 100;
 
+    this.attackDamage = PLAYER.ATTACK_DAMAGE;
+    this.attackRange = PLAYER.ATTACK_RANGE;
+    this.attackCooldown = PLAYER.ATTACK_COOLDOWN;
+    this.lastAttackTime = 0;
+    this.isAttacking = false;
 
-        scene.add.existing(this);
+    this.facing = "down";
+    this.isAlive = true;
+    this.onLevelUp = null;
+    this.onDeath = null;
 
+    scene.physics.add.existing(this);
+    this.body.setCollideWorldBounds(true);
+    this.body.setSize(24, 24);
+    this.body.setOffset(4, 4);
 
-        this.speed = 250;
+    this.setDepth(10);
+  }
 
+  move(cursors, wasd) {
+    let vx = 0;
+    let vy = 0;
 
-        this.health = 100;
+    const left = cursors.left.isDown || (wasd && wasd.left.isDown);
+    const right = cursors.right.isDown || (wasd && wasd.right.isDown);
+    const up = cursors.up.isDown || (wasd && wasd.up.isDown);
+    const down = cursors.down.isDown || (wasd && wasd.down.isDown);
 
-
-        scene.physics.add.existing(this);
-
-
-        this.body.setCollideWorldBounds(true);
-
+    if (left) {
+      vx = -1;
+      this.facing = "left";
+    } else if (right) {
+      vx = 1;
+      this.facing = "right";
     }
 
-
-
-    move(cursors) {
-
-
-        this.body.setVelocity(0);
-
-
-
-        if (cursors.left.isDown) {
-
-            this.body.setVelocityX(-this.speed);
-
-        }
-
-
-        else if (cursors.right.isDown) {
-
-            this.body.setVelocityX(this.speed);
-
-        }
-
-
-
-        if (cursors.up.isDown) {
-
-            this.body.setVelocityY(-this.speed);
-
-        }
-
-
-        else if (cursors.down.isDown) {
-
-            this.body.setVelocityY(this.speed);
-
-        }
-
-
+    if (up) {
+      vy = -1;
+      this.facing = "up";
+    } else if (down) {
+      vy = 1;
+      this.facing = "down";
     }
 
+    if (vx !== 0 && vy !== 0) {
+      vx *= 0.707;
+      vy *= 0.707;
+    }
 
+    this.isSprinting = cursors.shift.isDown && this.stamina > 0;
+    const currentSpeed = this.isSprinting ? this.sprintSpeed : this.speed;
 
+    this.body.setVelocity(vx * currentSpeed, vy * currentSpeed);
+
+    if (this.isSprinting && (vx !== 0 || vy !== 0)) {
+      this.stamina = Math.max(0, this.stamina - 0.5);
+    } else {
+      this.stamina = Math.min(this.maxStamina, this.stamina + this.staminaRegen);
+    }
+
+    this.updateFacing();
+  }
+
+  updateFacing() {
+    switch (this.facing) {
+      case "left":
+        this.setRotation(0);
+        this.setFlipX(true);
+        break;
+      case "right":
+        this.setRotation(0);
+        this.setFlipX(false);
+        break;
+      case "up":
+        this.setRotation(-Math.PI / 2);
+        this.setFlipX(false);
+        break;
+      case "down":
+        this.setRotation(Math.PI / 2);
+        this.setFlipX(false);
+        break;
+    }
+  }
+
+  attack() {
+    const now = this.scene.time.now;
+    if (now - this.lastAttackTime < this.attackCooldown) return false;
+    if (this.mana < 5) return false;
+
+    this.lastAttackTime = now;
+    this.isAttacking = true;
+    this.mana -= 5;
+
+    this.scene.time.delayedCall(200, () => {
+      this.isAttacking = false;
+    });
+
+    return true;
+  }
+
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount);
+
+    this.setTint(0xff0000);
+    this.scene.time.delayedCall(100, () => {
+      this.clearTint();
+    });
+
+    if (this.health <= 0) {
+      this.die();
+    }
+  }
+
+  heal(amount) {
+    this.health = Math.min(this.maxHealth, this.health + amount);
+  }
+
+  gainXP(amount) {
+    this.xp += amount;
+
+    while (this.xp >= this.xpToNextLevel) {
+      this.xp -= this.xpToNextLevel;
+      this.levelUp();
+    }
+  }
+
+  levelUp() {
+    this.level++;
+    this.xpToNextLevel = Math.floor(this.xpToNextLevel * 1.5);
+
+    this.maxHealth += 10;
+    this.health = this.maxHealth;
+    this.maxMana += 5;
+    this.mana = this.maxMana;
+    this.attackDamage += 2;
+
+    this.setTint(0xffee58);
+    this.scene.time.delayedCall(300, () => {
+      this.clearTint();
+    });
+
+    if (this.onLevelUp) {
+      this.onLevelUp(this.level);
+    }
+  }
+
+  die() {
+    this.isAlive = false;
+    this.scene.physics.pause();
+    this.setTint(0xff0000);
+
+    this.scene.cameras.main.shake(500, 0.02);
+
+    if (this.onDeath) this.onDeath();
+
+    this.scene.time.delayedCall(1500, () => {
+      this.health = this.maxHealth;
+      this.mana = this.maxMana;
+      this.stamina = this.maxStamina;
+      this.isAlive = true;
+      this.setPosition(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+      this.clearTint();
+      this.scene.physics.resume();
+    });
+  }
 }
-
 
 export default Player;

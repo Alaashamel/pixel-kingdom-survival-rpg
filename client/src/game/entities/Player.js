@@ -32,6 +32,7 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.facing = "down";
     this.isAlive = true;
     this.onLevelUp = null;
+    this.onDeath = null;
 
     scene.physics.add.existing(this);
     this.body.setCollideWorldBounds(true);
@@ -174,6 +175,8 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.setTint(0xff0000);
 
     this.scene.cameras.main.shake(500, 0.02);
+
+    if (this.onDeath) this.onDeath();
 
     this.scene.time.delayedCall(1500, () => {
       this.health = this.maxHealth;

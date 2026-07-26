@@ -33,6 +33,10 @@ export default class GameScene extends Phaser.Scene {
     this.player = new Player(this, WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
     this.player.onLevelUp = (level) => {
       this.levelUpNotification.show(level);
+      this.game.audioSystem.playLevelUp();
+    };
+    this.player.onDeath = () => {
+      this.game.audioSystem.playDeath();
     };
 
     this.enemyGroup = this.physics.add.group();
@@ -90,6 +94,8 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
+
+    this.game.audioSystem.startMusic();
   }
 
   spawnEnemies() {
@@ -138,12 +144,15 @@ export default class GameScene extends Phaser.Scene {
 
     enemy.lastAttackTime = now;
     enemy.dealDamage(player);
+    this.game.audioSystem.playDamage();
 
     this.combatSystem.knockback(player, enemy, 150);
   }
 
   performAttack() {
     if (!this.player.attack()) return;
+
+    this.game.audioSystem.playAttack();
 
     this.combatSystem.createAttackEffect(
       this.player.x,
@@ -176,7 +185,10 @@ export default class GameScene extends Phaser.Scene {
         this.combatSystem.knockback(enemy, this.player, 180);
 
         if (isCritical) {
+          this.game.audioSystem.playCriticalHit();
           this.cameras.main.shake(50, 0.005);
+        } else {
+          this.game.audioSystem.playHit();
         }
       }
     });

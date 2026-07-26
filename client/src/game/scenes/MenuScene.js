@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import AudioSystem from "../systems/AudioSystem";
 import { SCENES, COLORS } from "../constants.js";
 
 export default class MenuScene extends Phaser.Scene {
@@ -10,6 +11,11 @@ export default class MenuScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     this.cameras.main.setBackgroundColor(COLORS.BACKGROUND);
+
+    if (!this.game.audioSystem) {
+      this.game.audioSystem = new AudioSystem(this);
+      this.game.audioSystem.init();
+    }
 
     for (let i = 0; i < 200; i++) {
       const x = Phaser.Math.Between(0, width);
@@ -35,6 +41,7 @@ export default class MenuScene extends Phaser.Scene {
     subtitle.setOrigin(0.5);
 
     this.createButton(width / 2, height / 2 + 20, "Start Game", () => {
+      this.game.audioSystem.playUIClick();
       this.cameras.main.fadeOut(500, 0, 0, 0);
       this.time.delayedCall(500, () => {
         this.scene.start(SCENES.GAME);
@@ -42,10 +49,10 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     this.createButton(width / 2, height / 2 + 80, "Settings", () => {
-      // Placeholder for settings
+      this.game.audioSystem.playUIClick();
     });
 
-    const versionText = this.add.text(width - 10, height - 10, "v0.1.0", {
+    const versionText = this.add.text(width - 10, height - 10, "v0.2.0", {
       fontSize: "12px",
       fill: "#666666",
       fontFamily: "monospace",

@@ -215,6 +215,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         } else if (type === "xp") {
           this.scene.player.gainXP(15);
         }
+        if (this.scene.game.audioSystem) {
+          this.scene.game.audioSystem.playPickup();
+        }
         loot.destroy();
       }
     );

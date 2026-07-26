@@ -40,6 +40,9 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.lootBonus = 0;
     this.lastStandReady = true;
 
+    this.manaRegen = 0.15;
+    this.manaRegenRate = 15;
+
     scene.physics.add.existing(this);
     this.body.setCollideWorldBounds(true);
     this.body.setSize(24, 24);
@@ -112,11 +115,11 @@ class Player extends Phaser.GameObjects.Rectangle {
   attack() {
     const now = this.scene.time.now;
     if (now - this.lastAttackTime < this.attackCooldown) return false;
-    if (this.mana < 5) return false;
+    if (this.mana < 3) return false;
 
     this.lastAttackTime = now;
     this.isAttacking = true;
-    this.mana -= 5;
+    this.mana -= 3;
 
     this.scene.time.delayedCall(200, () => {
       this.isAttacking = false;
@@ -155,6 +158,13 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.health = Math.min(this.maxHealth, this.health + amount);
     if (this.scene.particleSystem && actualHeal > 0) {
       this.scene.particleSystem.emitHealParticles(this.x, this.y, actualHeal);
+    }
+  }
+
+  updateRegen(delta) {
+    if (!this.isAlive) return;
+    if (this.mana < this.maxMana) {
+      this.mana = Math.min(this.maxMana, this.mana + this.manaRegen * (delta / this.manaRegenRate));
     }
   }
 

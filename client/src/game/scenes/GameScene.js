@@ -179,27 +179,22 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
     this.audioStarted = false;
-    this.input.once("pointerdown", () => {
+    const startAudio = () => {
       if (!this.audioStarted && this.game.audioSystem) {
         this.game.audioSystem.resume();
         this.game.audioSystem.startMusic();
         this.audioStarted = true;
       }
-    });
-    this.input.keyboard.once("keydown", () => {
-      if (!this.audioStarted && this.game.audioSystem) {
-        this.game.audioSystem.resume();
-        this.game.audioSystem.startMusic();
-        this.audioStarted = true;
-      }
-    });
+    };
+    this.input.once("pointerdown", startAudio);
+    this.input.keyboard.once("keydown", startAudio);
   }
 
   spawnEnemies() {
     const enemyConfigs = [
-      { health: 40, speed: 60, damage: 8, xpReward: 20, count: 15 },
-      { health: 70, speed: 80, damage: 12, xpReward: 35, count: 8 },
-      { health: 100, speed: 100, damage: 18, xpReward: 50, count: 4 },
+      { health: 80, speed: 60, damage: 10, xpReward: 20, attackCooldown: 800, count: 15 },
+      { health: 140, speed: 80, damage: 16, xpReward: 35, attackCooldown: 700, count: 8 },
+      { health: 220, speed: 100, damage: 24, xpReward: 50, attackCooldown: 600, count: 4 },
     ];
 
     const margin = 300;
@@ -226,6 +221,7 @@ export default class GameScene extends Phaser.Scene {
           speed: config.speed,
           damage: config.damage,
           xpReward: config.xpReward,
+          attackCooldown: config.attackCooldown,
         });
 
         this.enemyGroup.add(enemy);
@@ -271,7 +267,15 @@ export default class GameScene extends Phaser.Scene {
     enemy.dealDamage(player);
     this.playSound("playDamage");
 
-    this.combatSystem.knockback(player, enemy, 150);
+    this.tweens.add({
+      targets: enemy,
+      scaleX: 1.3,
+      scaleY: 0.7,
+      duration: 80,
+      yoyo: true,
+    });
+
+    this.combatSystem.knockback(player, enemy, 120);
   }
 
   performAttack() {
@@ -502,6 +506,8 @@ export default class GameScene extends Phaser.Scene {
         enemy.updateHealthBar();
       }
     });
+
+    this.player.updateRegen(this.game.loop.delta);
 
     this.weatherSystem.update(this.time.now);
     this.minimap.update(this.player, this.enemyGroup);

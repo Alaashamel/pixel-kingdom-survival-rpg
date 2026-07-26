@@ -79,7 +79,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (dist < this.detectionRange) {
       this.isChasing = true;
 
-      if (dist > this.attackRange) {
+      if (dist > 16) {
         const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
         this.body.setVelocity(
           Math.cos(angle) * this.speed,
@@ -87,36 +87,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         );
       } else {
         this.body.setVelocity(0, 0);
-        this.tryAttack(target);
       }
     } else {
       this.isChasing = false;
       this.body.setVelocity(0, 0);
     }
-  }
-
-  tryAttack(target) {
-    if (!this.isAlive || !target || !target.isAlive) return;
-
-    const now = this.scene.time.now;
-    if (now - this.lastAttackTime < this.attackCooldown) return;
-
-    this.lastAttackTime = now;
-
-    this.scene.tweens.add({
-      targets: this,
-      scaleX: 1.3,
-      scaleY: 0.8,
-      duration: 100,
-      yoyo: true,
-      onComplete: () => {
-        if (!this.isAlive || !target || !target.isAlive) return;
-        const dist = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
-        if (dist <= this.attackRange * 1.2) {
-          this.dealDamage(target);
-        }
-      },
-    });
   }
 
   dealDamage(target) {

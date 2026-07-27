@@ -24,6 +24,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.isChasing = false;
     this.target = null;
 
+    this.isRanged = config.isRanged || false;
+    this.rangedRange = config.rangedRange || 180;
+    this.preferredDistance = config.preferredDistance || 150;
+
     this.body.setCollideWorldBounds(true);
     this.body.setSize(24, 24);
     this.body.setOffset(4, 4);
@@ -79,9 +83,24 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (dist < this.detectionRange) {
       this.isChasing = true;
+      const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
 
-      if (dist > 10) {
-        const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+      if (this.isRanged) {
+        if (dist < this.preferredDistance - 20) {
+          this.body.setVelocity(
+            -Math.cos(angle) * this.speed,
+            -Math.sin(angle) * this.speed
+          );
+        } else if (dist > this.preferredDistance + 30) {
+          this.body.setVelocity(
+            Math.cos(angle) * this.speed * 0.7,
+            Math.sin(angle) * this.speed * 0.7
+          );
+        } else {
+          this.body.setVelocity(0, 0);
+          this.tryRangedAttack(target);
+        }
+      } else if (dist > 10) {
         this.body.setVelocity(
           Math.cos(angle) * this.speed,
           Math.sin(angle) * this.speed
@@ -93,6 +112,56 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.isChasing = false;
       this.body.setVelocity(0, 0);
     }
+  }
+
+  tryRangedAttack(target) {
+    if (!this.isRanged || !this.isAlive) return;
+    const now = this.scene.time.now;
+    if (now - this.lastAttackTime < this.attackCooldown) return;
+
+    this.lastAttackTime = now;
+    this.shootProjectile(target);
+  }
+
+  shootProjectile(target) {
+    const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+    const speed = 250;
+
+    const projColor = this.enemyType === "mage" ? 0xff6600 : 0x8d6e63;
+    const projRadius = this.enemyType === "mage" ? 5 : 3;
+
+    const proj = this.scene.add.circle(this.x, this.y, projRadius, projColor);
+    proj.setDepth(9);
+    this.scene.physics.add.existing(proj);
+    proj.body.setAllowGravity(false);
+
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    proj.body.setVelocity(vx, vy);
+
+    const distToTarget = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
+    const lifetime = Math.min((distToTarget + 400) / speed * 1000, 2000);
+
+    this.scene.time.delayedCall(lifetime, () => {
+      if (proj.active) proj.destroy();
+    });
+
+    this.scene.physics.add.overlap(
+      target,
+      proj,
+      () => {
+        if (!proj.active) return;
+        if (proj.body) proj.body.enable = false;
+        target.takeDamage(this.damage);
+        if (this.scene.game.audioSystem) {
+          try { this.scene.game.audioSystem.playHit(); } catch { /* ignore */ }
+        }
+        if (this.scene.combatSystem) {
+          this.scene.combatSystem.knockback(target, this, 80);
+        }
+        proj.destroy();
+      }
+    );
   }
 
   dealDamage(target) {

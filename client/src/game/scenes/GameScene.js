@@ -208,11 +208,25 @@ export default class GameScene extends Phaser.Scene {
 
   getWaveConfigs() {
     const scale = 1 + (this.wave - 1) * 0.15;
-    return [
-      { health: Math.floor(80 * scale), speed: 80 + this.wave * 5, damage: Math.floor(10 * scale), xpReward: 20 + this.wave * 2, attackCooldown: 800, count: 15 + this.wave * 2 },
-      { health: Math.floor(140 * scale), speed: 100 + this.wave * 5, damage: Math.floor(16 * scale), xpReward: 35 + this.wave * 3, attackCooldown: 700, count: 8 + this.wave },
-      { health: Math.floor(220 * scale), speed: 120 + this.wave * 5, damage: Math.floor(24 * scale), xpReward: 50 + this.wave * 4, attackCooldown: 600, count: 4 + Math.floor(this.wave / 2) },
+    const configs = [
+      { type: "slime", texture: "slime", health: Math.floor(80 * scale), speed: 80 + this.wave * 5, damage: Math.floor(10 * scale), xpReward: 20 + this.wave * 2, attackCooldown: 800, count: 15 + this.wave * 2 },
+      { type: "slime", texture: "slime", health: Math.floor(140 * scale), speed: 100 + this.wave * 5, damage: Math.floor(16 * scale), xpReward: 35 + this.wave * 3, attackCooldown: 700, count: 8 + this.wave },
+      { type: "slime", texture: "slime", health: Math.floor(220 * scale), speed: 120 + this.wave * 5, damage: Math.floor(24 * scale), xpReward: 50 + this.wave * 4, attackCooldown: 600, count: 4 + Math.floor(this.wave / 2) },
     ];
+
+    if (this.wave >= 2) {
+      configs.push({ type: "skeleton", texture: "skeleton", health: Math.floor(280 * scale), speed: 70 + this.wave * 4, damage: Math.floor(20 * scale), xpReward: 45 + this.wave * 3, attackCooldown: 900, count: 3 + this.wave });
+    }
+
+    if (this.wave >= 3) {
+      configs.push({ type: "archer", texture: "archer", health: Math.floor(100 * scale), speed: 90 + this.wave * 3, damage: Math.floor(14 * scale), xpReward: 40 + this.wave * 3, attackCooldown: 1500, count: 2 + Math.floor(this.wave / 2), isRanged: true, preferredDistance: 160 });
+    }
+
+    if (this.wave >= 4) {
+      configs.push({ type: "mage", texture: "mage", health: Math.floor(80 * scale), speed: 60 + this.wave * 2, damage: Math.floor(22 * scale), xpReward: 55 + this.wave * 4, attackCooldown: 2000, count: 1 + Math.floor(this.wave / 3), isRanged: true, preferredDistance: 200 });
+    }
+
+    return configs;
   }
 
   spawnWave() {
@@ -236,12 +250,15 @@ export default class GameScene extends Phaser.Scene {
           Phaser.Math.Distance.Between(x, y, centerX, centerY) < safeZone
         );
 
-        const enemy = new Enemy(this, x, y, "slime", {
+        const enemy = new Enemy(this, x, y, config.texture, {
           health: config.health,
           speed: config.speed,
           damage: config.damage,
           xpReward: config.xpReward,
           attackCooldown: config.attackCooldown,
+          enemyType: config.type,
+          isRanged: config.isRanged || false,
+          preferredDistance: config.preferredDistance || 150,
         });
 
         this.enemyGroup.add(enemy);
@@ -658,7 +675,7 @@ export default class GameScene extends Phaser.Scene {
       const dist = Phaser.Math.Distance.Between(
         enemy.x, enemy.y, this.player.x, this.player.y
       );
-      if (dist < 28) {
+      if (dist < 28 && !enemy.isRanged) {
         const now = this.time.now;
         if (!enemy.lastAttackTime || now - enemy.lastAttackTime >= enemy.attackCooldown) {
           enemy.lastAttackTime = now;

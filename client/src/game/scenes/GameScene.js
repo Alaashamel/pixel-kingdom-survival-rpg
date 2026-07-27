@@ -224,22 +224,28 @@ export default class GameScene extends Phaser.Scene {
 
   getWaveConfigs() {
     const scale = 1 + (this.wave - 1) * 0.15;
+    const nightBonus = this.weatherSystem && this.weatherSystem.isNight() ? 1.2 : 1;
     const configs = [
-      { type: "slime", texture: "slime", health: Math.floor(80 * scale), speed: 80 + this.wave * 5, damage: Math.floor(10 * scale), xpReward: 20 + this.wave * 2, attackCooldown: 800, count: 15 + this.wave * 2 },
-      { type: "slime", texture: "slime", health: Math.floor(140 * scale), speed: 100 + this.wave * 5, damage: Math.floor(16 * scale), xpReward: 35 + this.wave * 3, attackCooldown: 700, count: 8 + this.wave },
-      { type: "slime", texture: "slime", health: Math.floor(220 * scale), speed: 120 + this.wave * 5, damage: Math.floor(24 * scale), xpReward: 50 + this.wave * 4, attackCooldown: 600, count: 4 + Math.floor(this.wave / 2) },
+      { type: "slime", texture: "slime", health: Math.floor(80 * scale), speed: 80 + this.wave * 5, damage: Math.floor(10 * scale * nightBonus), xpReward: 20 + this.wave * 2, attackCooldown: 800, count: 15 + this.wave * 2 },
+      { type: "slime", texture: "slime", health: Math.floor(140 * scale), speed: 100 + this.wave * 5, damage: Math.floor(16 * scale * nightBonus), xpReward: 35 + this.wave * 3, attackCooldown: 700, count: 8 + this.wave },
+      { type: "slime", texture: "slime", health: Math.floor(220 * scale), speed: 120 + this.wave * 5, damage: Math.floor(24 * scale * nightBonus), xpReward: 50 + this.wave * 4, attackCooldown: 600, count: 4 + Math.floor(this.wave / 2) },
     ];
 
     if (this.wave >= 2) {
-      configs.push({ type: "skeleton", texture: "skeleton", health: Math.floor(280 * scale), speed: 70 + this.wave * 4, damage: Math.floor(20 * scale), xpReward: 45 + this.wave * 3, attackCooldown: 900, count: 3 + this.wave });
+      const skeletonCount = 3 + this.wave + (this.weatherSystem?.isNight() ? 3 : 0);
+      configs.push({ type: "skeleton", texture: "skeleton", health: Math.floor(280 * scale), speed: 70 + this.wave * 4, damage: Math.floor(20 * scale * nightBonus), xpReward: 45 + this.wave * 3, attackCooldown: 900, count: skeletonCount });
     }
 
     if (this.wave >= 3) {
-      configs.push({ type: "archer", texture: "archer", health: Math.floor(100 * scale), speed: 90 + this.wave * 3, damage: Math.floor(14 * scale), xpReward: 40 + this.wave * 3, attackCooldown: 1500, count: 2 + Math.floor(this.wave / 2), isRanged: true, preferredDistance: 160 });
+      configs.push({ type: "archer", texture: "archer", health: Math.floor(100 * scale), speed: 90 + this.wave * 3, damage: Math.floor(14 * scale * nightBonus), xpReward: 40 + this.wave * 3, attackCooldown: 1500, count: 2 + Math.floor(this.wave / 2), isRanged: true, preferredDistance: 160 });
     }
 
     if (this.wave >= 4) {
-      configs.push({ type: "mage", texture: "mage", health: Math.floor(80 * scale), speed: 60 + this.wave * 2, damage: Math.floor(22 * scale), xpReward: 55 + this.wave * 4, attackCooldown: 2000, count: 1 + Math.floor(this.wave / 3), isRanged: true, preferredDistance: 200 });
+      configs.push({ type: "mage", texture: "mage", health: Math.floor(80 * scale), speed: 60 + this.wave * 2, damage: Math.floor(22 * scale * nightBonus), xpReward: 55 + this.wave * 4, attackCooldown: 2000, count: 1 + Math.floor(this.wave / 3), isRanged: true, preferredDistance: 200 });
+    }
+
+    if (this.weatherSystem?.isNight()) {
+      configs.push({ type: "skeleton", texture: "skeleton", health: Math.floor(350 * scale), speed: 100 + this.wave * 3, damage: Math.floor(28 * scale), xpReward: 60 + this.wave * 4, attackCooldown: 800, count: 2 + Math.floor(this.wave / 2) });
     }
 
     return configs;
@@ -691,6 +697,17 @@ export default class GameScene extends Phaser.Scene {
     this.shopHint.setScrollFactor(0);
     this.shopHint.setDepth(100);
 
+    this.timeText = this.add.text(this.cameras.main.width / 2, 16, "", {
+      fontSize: "12px",
+      fill: "#ffffff",
+      fontFamily: "monospace",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    this.timeText.setOrigin(0.5, 0);
+    this.timeText.setScrollFactor(0);
+    this.timeText.setDepth(100);
+
     const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Melee | E: Ranged | Q: Whirlwind | SHIFT: Dash | B: Shop | I: Inventory | ESC: Pause", {
       fontSize: "10px",
       fill: "#888888",
@@ -868,6 +885,13 @@ export default class GameScene extends Phaser.Scene {
       this.shopHint.setText("Press E to enter Dungeon");
     } else {
       this.shopHint.setText("");
+    }
+
+    if (this.weatherSystem) {
+      const timeStr = this.weatherSystem.getTimeString();
+      const isNight = this.weatherSystem.isNight();
+      this.timeText.setText(isNight ? `NIGHT ${timeStr}` : `DAY ${timeStr}`);
+      this.timeText.setFill(isNight ? "#ff6666" : "#ffd700");
     }
   }
 }

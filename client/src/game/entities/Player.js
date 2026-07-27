@@ -39,6 +39,7 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.damageReduction = 0;
     this.lootBonus = 0;
     this.lastStandReady = true;
+    this.gold = 50;
 
     this.manaRegen = 0.15;
     this.manaRegenRate = 15;

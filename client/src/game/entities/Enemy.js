@@ -165,6 +165,34 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     const s = scene || this.scene;
     if (!s || !s.player) return;
 
+    if (Math.random() < 0.5) {
+      const goldAmount = Phaser.Math.Between(5, 15);
+      const goldOrb = s.add.circle(this.x, this.y, 5, 0xffd700);
+      goldOrb.setDepth(5);
+      s.physics.add.existing(goldOrb);
+
+      const goldTween = s.tweens.add({
+        targets: goldOrb,
+        y: goldOrb.y - 8,
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+
+      const playerRef = s.player;
+      s.physics.add.overlap(playerRef, goldOrb, () => {
+        if (!goldOrb.active) return;
+        if (goldTween && goldTween.isPlaying()) goldTween.stop();
+        if (goldOrb.body) goldOrb.body.enable = false;
+        playerRef.gold += goldAmount;
+        if (s.game.audioSystem) {
+          try { s.game.audioSystem.playPickup(); } catch { /* ignore */ }
+        }
+        goldOrb.destroy();
+      });
+    }
+
     const lootTypes = ["health", "mana", "xp"];
     const lootChance = 0.4;
 

@@ -171,6 +171,33 @@ class World {
     });
     signText.setOrigin(0.5);
     signText.setDepth(10);
+
+    this.shopkeeperX = villageX;
+    this.shopkeeperY = villageY - 80;
+
+    const shopkeeper = this.scene.add.image(this.shopkeeperX, this.shopkeeperY, "shopkeeper");
+    shopkeeper.setDepth(5);
+    shopkeeper.setScale(2);
+
+    const shopLabel = this.scene.add.text(this.shopkeeperX, this.shopkeeperY - 40, "SHOP", {
+      fontSize: "10px",
+      fill: "#ffd700",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    shopLabel.setOrigin(0.5);
+    shopLabel.setDepth(10);
+
+    this.scene.tweens.add({
+      targets: shopLabel,
+      y: shopLabel.y - 4,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
   }
 
   createDungeonArea() {

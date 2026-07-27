@@ -16,6 +16,8 @@ import SkillTreeUI from "../ui/SkillTreeUI";
 import ParticleSystem from "../systems/ParticleSystem";
 import QuestSystem from "../systems/QuestSystem";
 import QuestUI from "../ui/QuestUI";
+import ShopSystem from "../systems/ShopSystem";
+import ShopUI from "../ui/ShopUI";
 import { SCENES, COLORS, WORLD } from "../constants.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -105,6 +107,7 @@ export default class GameScene extends Phaser.Scene {
         attackDamage: this.player.attackDamage,
         x: this.player.x,
         y: this.player.y,
+        gold: this.player.gold,
       }),
       () => ({}),
       0
@@ -120,13 +123,22 @@ export default class GameScene extends Phaser.Scene {
       this.game.questSystem.acceptQuest("firstSteps");
       this.game.questSystem.acceptQuest("survivor");
       this.game.questSystem.acceptQuest("collector");
+      this.game.questSystem.onRewardGranted = (reward) => {
+        if (reward.gold) this.player.gold += reward.gold;
+        if (reward.xp) this.player.gainXP(reward.xp);
+      };
     }
     this.questUI = new QuestUI(this, this.game.questSystem);
     this.questUI.createTracker();
 
+    this.shopSystem = new ShopSystem(this);
+    this.shopUI = new ShopUI(this, this.shopSystem);
+
     this.isPaused = false;
     this.input.keyboard.on("keydown-ESC", () => {
-      if (this.skillTreeUI.isOpen) {
+      if (this.shopUI.isOpen) {
+        this.shopUI.close();
+      } else if (this.skillTreeUI.isOpen) {
         this.skillTreeUI.close();
       } else if (this.saveLoadUI.isOpen) {
         this.saveLoadUI.close();
@@ -166,6 +178,17 @@ export default class GameScene extends Phaser.Scene {
     this.input.keyboard.on("keydown-F5", () => {
       if (!this.isPaused) {
         this.saveLoadUI.open();
+      }
+    });
+
+    this.shopKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
+    this.input.keyboard.on("keydown-B", () => {
+      if (!this.isPaused && !this.saveLoadUI.isOpen && !this.skillTreeUI.isOpen && !this.inventoryPanel.isOpen && !this.questUI.isLogOpen) {
+        if (this.shopUI.isOpen) {
+          this.shopUI.close();
+        } else if (this.isNearShopkeeper()) {
+          this.shopUI.open();
+        }
       }
     });
 
@@ -425,6 +448,15 @@ export default class GameScene extends Phaser.Scene {
     return nearest;
   }
 
+  isNearShopkeeper() {
+    if (!this.worldSystem || !this.worldSystem.shopkeeperX) return false;
+    const dist = Phaser.Math.Distance.Between(
+      this.player.x, this.player.y,
+      this.worldSystem.shopkeeperX, this.worldSystem.shopkeeperY
+    );
+    return dist < 80;
+  }
+
   createHUD() {
     const hudContainer = this.add.container(0, 0);
     hudContainer.setScrollFactor(0);
@@ -499,7 +531,31 @@ export default class GameScene extends Phaser.Scene {
     this.enemyCountText.setScrollFactor(0);
     this.enemyCountText.setDepth(100);
 
-    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Attack | SHIFT: Sprint | I: Inventory | ESC: Pause", {
+    this.goldText = this.add.text(this.cameras.main.width - 16, 68, "Gold: 50", {
+      fontSize: "12px",
+      fill: "#ffd700",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    this.goldText.setOrigin(1, 0);
+    this.goldText.setScrollFactor(0);
+    this.goldText.setDepth(100);
+
+    this.shopHint = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 16, "", {
+      fontSize: "12px",
+      fill: "#ffd700",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    this.shopHint.setOrigin(0.5, 1);
+    this.shopHint.setScrollFactor(0);
+    this.shopHint.setDepth(100);
+
+    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Attack | SHIFT: Sprint | B: Shop | I: Inventory | ESC: Pause", {
       fontSize: "10px",
       fill: "#888888",
       fontFamily: "monospace",
@@ -651,5 +707,13 @@ export default class GameScene extends Phaser.Scene {
 
     const aliveEnemies = this.getAliveEnemyCount();
     this.enemyCountText.setText(`Enemies: ${aliveEnemies}`);
+
+    this.goldText.setText(`Gold: ${this.player.gold}`);
+
+    if (this.isNearShopkeeper() && !this.shopUI.isOpen) {
+      this.shopHint.setText("Press B to open Shop");
+    } else {
+      this.shopHint.setText("");
+    }
   }
 }

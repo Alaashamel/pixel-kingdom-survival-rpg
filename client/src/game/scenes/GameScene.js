@@ -567,7 +567,7 @@ export default class GameScene extends Phaser.Scene {
       this.player.x, this.player.y,
       this.worldSystem.shopkeeperX, this.worldSystem.shopkeeperY
     );
-    return dist < 80;
+    return dist < 150;
   }
 
   isNearDungeon() {
@@ -606,31 +606,34 @@ export default class GameScene extends Phaser.Scene {
 
     const barX = 16;
     const barWidth = 160;
-    const barHeight = 14;
-    const barGap = 22;
+    const barHeight = 16;
+    const barGap = 24;
 
-    const createBar = (y, color, label) => {
-      const bg = this.add.rectangle(barX, y, barWidth, barHeight, 0x000000, 0.6);
+    const createBar = (y, color, label, labelColor) => {
+      const bg = this.add.rectangle(barX, y, barWidth + 4, barHeight + 4, 0x000000, 0.7);
       bg.setOrigin(0, 0);
-      bg.setStrokeStyle(1, 0x333333);
+      bg.setStrokeStyle(1, 0x555555);
 
       const fill = this.add.rectangle(barX + 2, y + 2, barWidth - 4, barHeight - 4, color);
       fill.setOrigin(0, 0);
 
-      const text = this.add.text(barX + barWidth + 8, y, label, {
-        fontSize: "10px",
-        fill: "#ffffff",
+      const text = this.add.text(barX + barWidth + 10, y + 1, label, {
+        fontSize: "12px",
+        fill: labelColor,
         fontFamily: "monospace",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 2,
       });
       text.setOrigin(0, 0);
 
       return { bg, fill, text };
     };
 
-    this.healthBar = createBar(16, COLORS.HEALTH_BAR, "HP");
-    this.manaBar = createBar(16 + barGap, COLORS.MANA_BAR, "MP");
-    this.staminaBar = createBar(16 + barGap * 2, COLORS.STAMINA_BAR, "SP");
-    this.xpBar = createBar(16 + barGap * 3, COLORS.XP_BAR, "XP");
+    this.healthBar = createBar(16, COLORS.HEALTH_BAR, "HP", "#ff6666");
+    this.manaBar = createBar(16 + barGap, COLORS.MANA_BAR, "MP", "#66bbff");
+    this.staminaBar = createBar(16 + barGap * 2, COLORS.STAMINA_BAR, "SP", "#ffee66");
+    this.xpBar = createBar(16 + barGap * 3, COLORS.XP_BAR, "XP", "#66ff88");
 
     hudContainer.add([
       this.healthBar.bg, this.healthBar.fill, this.healthBar.text,
@@ -640,8 +643,8 @@ export default class GameScene extends Phaser.Scene {
     ]);
 
     this.levelText = this.add.text(this.cameras.main.width - 16, 16, "Lv. 1", {
-      fontSize: "16px",
-      fill: "#00e676",
+      fontSize: "18px",
+      fill: "#00ff88",
       fontFamily: "monospace",
       fontStyle: "bold",
       stroke: "#000000",
@@ -651,21 +654,23 @@ export default class GameScene extends Phaser.Scene {
     this.levelText.setScrollFactor(0);
     this.levelText.setDepth(100);
 
-    this.waveText = this.add.text(this.cameras.main.width - 16, 36, "Wave 1", {
-      fontSize: "12px",
-      fill: "#ff9900",
+    this.waveText = this.add.text(this.cameras.main.width - 16, 38, "Wave 1", {
+      fontSize: "14px",
+      fill: "#ffaa33",
       fontFamily: "monospace",
+      fontStyle: "bold",
       stroke: "#000000",
-      strokeThickness: 2,
+      strokeThickness: 3,
     });
     this.waveText.setOrigin(1, 0);
     this.waveText.setScrollFactor(0);
     this.waveText.setDepth(100);
 
-    this.enemyCountText = this.add.text(this.cameras.main.width - 16, 52, "Enemies: 0", {
-      fontSize: "12px",
+    this.enemyCountText = this.add.text(this.cameras.main.width - 16, 56, "Enemies: 0", {
+      fontSize: "13px",
       fill: "#ff6666",
       fontFamily: "monospace",
+      fontStyle: "bold",
       stroke: "#000000",
       strokeThickness: 2,
     });
@@ -673,47 +678,56 @@ export default class GameScene extends Phaser.Scene {
     this.enemyCountText.setScrollFactor(0);
     this.enemyCountText.setDepth(100);
 
-    this.goldText = this.add.text(this.cameras.main.width - 16, 68, "Gold: 50", {
-      fontSize: "12px",
+    this.goldText = this.add.text(this.cameras.main.width - 16, 74, "Gold: 50", {
+      fontSize: "14px",
       fill: "#ffd700",
       fontFamily: "monospace",
       fontStyle: "bold",
       stroke: "#000000",
-      strokeThickness: 2,
+      strokeThickness: 3,
     });
     this.goldText.setOrigin(1, 0);
     this.goldText.setScrollFactor(0);
     this.goldText.setDepth(100);
 
-    this.shopHint = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 16, "", {
-      fontSize: "12px",
+    this.shopHint = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 50, "", {
+      fontSize: "14px",
       fill: "#ffd700",
       fontFamily: "monospace",
       fontStyle: "bold",
       stroke: "#000000",
-      strokeThickness: 2,
+      strokeThickness: 3,
     });
     this.shopHint.setOrigin(0.5, 1);
     this.shopHint.setScrollFactor(0);
     this.shopHint.setDepth(100);
 
     this.timeText = this.add.text(this.cameras.main.width / 2, 16, "", {
-      fontSize: "12px",
+      fontSize: "14px",
       fill: "#ffffff",
       fontFamily: "monospace",
+      fontStyle: "bold",
       stroke: "#000000",
-      strokeThickness: 2,
+      strokeThickness: 3,
     });
     this.timeText.setOrigin(0.5, 0);
     this.timeText.setScrollFactor(0);
     this.timeText.setDepth(100);
 
-    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Melee | E: Ranged | Q: Whirlwind | SHIFT: Dash | B: Shop | I: Inventory | ESC: Pause", {
-      fontSize: "10px",
-      fill: "#888888",
+    const controlsBg = this.add.rectangle(0, this.cameras.main.height - 24, this.cameras.main.width, 28, 0x000000, 0.65);
+    controlsBg.setOrigin(0, 1);
+    controlsBg.setScrollFactor(0);
+    controlsBg.setDepth(99);
+
+    const controlsText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 24, "WASD Move  |  SPACE Attack  |  E Ranged  |  Q Whirlwind  |  SHIFT Dash  |  B Shop  |  I Inventory  |  F5 Save", {
+      fontSize: "11px",
+      fill: "#cccccc",
       fontFamily: "monospace",
+      fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 2,
     });
-    controlsText.setOrigin(0, 1);
+    controlsText.setOrigin(0.5, 1);
     controlsText.setScrollFactor(0);
     controlsText.setDepth(100);
   }

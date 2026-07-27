@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { WORLD } from "../constants.js";
+import { WORLD, COLORS } from "../constants.js";
 
 class World {
   constructor(scene) {
@@ -175,24 +175,42 @@ class World {
     this.shopkeeperX = villageX;
     this.shopkeeperY = villageY - 80;
 
+    this.shopkeeperGlow = this.scene.add.circle(this.shopkeeperX, this.shopkeeperY, 28, COLORS.GOLD, 0.15);
+    this.shopkeeperGlow.setDepth(4);
+    this.scene.tweens.add({
+      targets: this.shopkeeperGlow,
+      scaleX: 1.4, scaleY: 1.4, alpha: 0.05,
+      duration: 1200, yoyo: true, repeat: -1, ease: "Sine.easeInOut",
+    });
+
     const shopkeeper = this.scene.add.image(this.shopkeeperX, this.shopkeeperY, "shopkeeper");
     shopkeeper.setDepth(5);
-    shopkeeper.setScale(2);
+    shopkeeper.setScale(2.5);
 
-    const shopLabel = this.scene.add.text(this.shopkeeperX, this.shopkeeperY - 40, "SHOP", {
-      fontSize: "10px",
+    const shopLabel = this.scene.add.text(this.shopkeeperX, this.shopkeeperY - 48, "SHOP", {
+      fontSize: "14px",
       fill: "#ffd700",
       fontFamily: "monospace",
       fontStyle: "bold",
       stroke: "#000000",
-      strokeThickness: 2,
+      strokeThickness: 3,
     });
     shopLabel.setOrigin(0.5);
     shopLabel.setDepth(10);
 
+    const shopSubLabel = this.scene.add.text(this.shopkeeperX, this.shopkeeperY - 34, "[ Press B ]", {
+      fontSize: "10px",
+      fill: "#ffffff",
+      fontFamily: "monospace",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    shopSubLabel.setOrigin(0.5);
+    shopSubLabel.setDepth(10);
+
     this.scene.tweens.add({
-      targets: shopLabel,
-      y: shopLabel.y - 4,
+      targets: [shopLabel, shopSubLabel],
+      y: "-=4",
       duration: 800,
       yoyo: true,
       repeat: -1,

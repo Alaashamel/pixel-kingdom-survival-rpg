@@ -3,6 +3,7 @@ import BootScene from "./scenes/BootScene";
 import PreloadScene from "./scenes/PreloadScene";
 import MenuScene from "./scenes/MenuScene";
 import GameScene from "./scenes/GameScene";
+import DungeonScene from "./scenes/DungeonScene";
 import { COLORS, GAME_WIDTH, GAME_HEIGHT } from "./constants.js";
 
 const config = {
@@ -23,7 +24,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [BootScene, PreloadScene, MenuScene, GameScene],
+  scene: [BootScene, PreloadScene, MenuScene, GameScene, DungeonScene],
 };
 
 export default config;

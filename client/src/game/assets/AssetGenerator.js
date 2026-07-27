@@ -22,6 +22,8 @@ export default class AssetGenerator {
     this.generateEnemySlime();
     this.generateEnemySkeleton();
     this.generateShopkeeper();
+    this.generateArcher();
+    this.generateMage();
     this.generateParticles();
     this.generateUIElements();
   }
@@ -344,6 +346,67 @@ export default class AssetGenerator {
     g.fillRect(14, 18, 4, 4);
 
     g.generateTexture("shopkeeper", 32, 32);
+    g.destroy();
+  }
+
+  generateArcher() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0x4caf50);
+    g.fillRect(6, 14, 20, 16);
+
+    g.fillStyle(0x388e3c);
+    g.fillRect(6, 14, 20, 3);
+
+    g.fillStyle(0xffcc80);
+    g.fillRect(10, 4, 12, 12);
+
+    g.fillStyle(0x000000);
+    g.fillRect(12, 8, 2, 2);
+    g.fillRect(18, 8, 2, 2);
+
+    g.fillStyle(0x8d6e63);
+    g.fillRect(26, 6, 3, 20);
+
+    g.fillStyle(0xd7ccc8);
+    g.fillRect(26, 4, 2, 3);
+
+    g.fillStyle(0x4caf50);
+    g.fillRect(4, 30, 10, 2);
+    g.fillRect(18, 30, 10, 2);
+
+    g.generateTexture("archer", 32, 32);
+    g.destroy();
+  }
+
+  generateMage() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0x7b1fa2);
+    g.fillRect(6, 14, 20, 16);
+
+    g.fillStyle(0x6a1b9a);
+    g.fillRect(6, 14, 20, 3);
+
+    g.fillStyle(0xffcc80);
+    g.fillRect(10, 4, 12, 12);
+
+    g.fillStyle(0x000000);
+    g.fillRect(12, 8, 2, 2);
+    g.fillRect(18, 8, 2, 2);
+
+    g.fillStyle(0x7b1fa2);
+    g.fillTriangle(10, 4, 16, -4, 22, 4);
+
+    g.fillStyle(0xff6600);
+    g.fillCircle(28, 16, 3);
+    g.fillCircle(28, 16, 2);
+
+    g.fillStyle(0x7b1fa2);
+    g.fillRect(4, 30, 10, 2);
+    g.fillRect(18, 30, 10, 2);
+
+    g.generateTexture("mage", 32, 32);
     g.destroy();
   }
 

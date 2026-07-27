@@ -80,7 +80,11 @@ export default class GameScene extends Phaser.Scene {
 
     this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.rangedKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.whirlwindKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.inventoryKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+
+    this._lastShiftTime = 0;
+    this._dashCooldown = false;
 
     this.createHUD();
 
@@ -549,6 +553,108 @@ export default class GameScene extends Phaser.Scene {
     return dist < 80;
   }
 
+  performWhirlwind() {
+    if (!this.player.isAlive) return;
+    if (this.player.mana < 10) return;
+
+    const now = this.time.now;
+    if (this._lastWhirlwindTime && now - this._lastWhirlwindTime < 2000) return;
+    this._lastWhirlwindTime = now;
+    this.player.mana -= 10;
+
+    this.playSound("playAttack");
+
+    const whirlRadius = 120;
+    const spin = this.add.circle(this.player.x, this.player.y, whirlRadius, 0xffffff, 0.3);
+    spin.setDepth(11);
+    spin.setStrokeStyle(3, 0xffee58);
+
+    this.tweens.add({
+      targets: spin,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      alpha: 0,
+      duration: 400,
+      onComplete: () => spin.destroy(),
+    });
+
+    this.tweens.add({
+      targets: this.player,
+      angle: 360,
+      duration: 300,
+      onComplete: () => { this.player.angle = 0; },
+    });
+
+    [...this.enemyGroup.getChildren()].forEach((enemy) => {
+      if (!enemy || !enemy.isAlive) return;
+      const dist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y, enemy.x, enemy.y
+      );
+      if (dist < whirlRadius + 20) {
+        const isCritical = Math.random() < (this.player.critChance || 0.15);
+        const damage = isCritical
+          ? Math.floor(this.player.attackDamage * 1.2 * 1.8)
+          : Math.floor(this.player.attackDamage * 1.2);
+
+        enemy.takeDamage(damage);
+        this.combatSystem.knockback(enemy, this.player, 200);
+        this.particleSystem.emitDamageParticles(enemy.x, enemy.y, damage, isCritical);
+
+        if (isCritical) {
+          this.playSound("playCriticalHit");
+        } else {
+          this.playSound("playHit");
+        }
+      }
+    });
+
+    if (this.boss && this.boss.isAlive) {
+      const bossDist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y, this.boss.x, this.boss.y
+      );
+      if (bossDist < whirlRadius + 30) {
+        const dmg = Math.floor(this.player.attackDamage * 1.2);
+        this.boss.takeDamage(dmg);
+        this.combatSystem.showDamageNumber(this.boss.x, this.boss.y, dmg, false);
+        this.playSound("playHit");
+      }
+    }
+  }
+
+  performDash() {
+    if (!this.player.isAlive) return;
+    if (this._dashCooldown) return;
+
+    this._dashCooldown = true;
+    this.time.delayedCall(800, () => { this._dashCooldown = false; });
+
+    const facingToAngle = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
+    const angle = facingToAngle[this.player.facing] || 0;
+    const dashDist = 180;
+
+    const targetX = this.player.x + Math.cos(angle) * dashDist;
+    const targetY = this.player.y + Math.sin(angle) * dashDist;
+
+    this.tweens.add({
+      targets: this.player,
+      x: targetX,
+      y: targetY,
+      duration: 150,
+      ease: "Power2",
+      onStart: () => {
+        this.player.body.enable = false;
+        this.player.setAlpha(0.5);
+      },
+      onComplete: () => {
+        this.player.body.enable = true;
+        this.player.setAlpha(1);
+        this.player.body.reset(targetX, targetY);
+      },
+    });
+
+    this.particleSystem.emitAttackParticles(this.player.x, this.player.y, this.player.facing);
+  }
+
   createHUD() {
     const hudContainer = this.add.container(0, 0);
     hudContainer.setScrollFactor(0);
@@ -647,7 +753,7 @@ export default class GameScene extends Phaser.Scene {
     this.shopHint.setScrollFactor(0);
     this.shopHint.setDepth(100);
 
-    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Melee | E: Ranged | SHIFT: Sprint | B: Shop | I: Inventory | ESC: Pause", {
+    const controlsText = this.add.text(16, this.cameras.main.height - 16, "WASD: Move | SPACE: Melee | E: Ranged | Q: Whirlwind | SHIFT: Dash | B: Shop | I: Inventory | ESC: Pause", {
       fontSize: "10px",
       fill: "#888888",
       fontFamily: "monospace",
@@ -743,6 +849,14 @@ export default class GameScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.rangedKey)) {
       this.performRangedAttack();
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.whirlwindKey) && this.game.skillTree?.hasSkill("whirlwind")) {
+      this.performWhirlwind();
+    }
+
+    if (this.game.skillTree?.hasSkill("dash") && Phaser.Input.Keyboard.JustDown(this.cursors.shift)) {
+      this.performDash();
     }
 
     const enemies = [...this.enemyGroup.getChildren()];

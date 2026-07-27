@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { COLORS } from "../constants.js";
+import { SHOP_ITEMS } from "../systems/ShopSystem.js";
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture = "slime", config = {}) {
@@ -195,6 +196,54 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     const lootTypes = ["health", "mana", "xp"];
     const lootChance = 0.4;
+
+    if (Math.random() < 0.12) {
+      const dropItems = SHOP_ITEMS.filter((i) => i.type !== "consumable" || i.price <= 30);
+      const droppedItem = Phaser.Utils.Array.GetRandom(dropItems);
+      const itemColor = droppedItem.type === "weapon" ? 0xaaaaaa :
+                        droppedItem.type === "armor" ? 0x4488ff :
+                        droppedItem.type === "accessory" ? 0xffaa00 : 0xff4444;
+
+      const orb = s.add.circle(this.x, this.y, 7, itemColor);
+      orb.setDepth(5);
+      s.physics.add.existing(orb);
+
+      const itemTween = s.tweens.add({
+        targets: orb,
+        y: orb.y - 10,
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+
+      const playerRef = s.player;
+      const audioRef = s.game.audioSystem;
+
+      s.physics.add.overlap(playerRef, orb, () => {
+        if (!orb.active) return;
+        if (itemTween && itemTween.isPlaying()) itemTween.stop();
+        if (orb.body) orb.body.enable = false;
+
+        const shop = s.game.shopSystem;
+        if (shop) {
+          const existing = shop.inventory.find((i) => i.id === droppedItem.id);
+          if (existing) {
+            existing.count++;
+          } else {
+            shop.inventory.push({ ...droppedItem, count: 1 });
+          }
+        }
+
+        if (audioRef) {
+          try { audioRef.playPickup(); } catch { /* ignore */ }
+        }
+
+        orb.destroy();
+      });
+
+      return;
+    }
 
     if (Math.random() > lootChance) return;
 

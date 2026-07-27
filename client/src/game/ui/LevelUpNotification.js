@@ -7,7 +7,7 @@ export default class LevelUpNotification {
   }
 
   show(level) {
-    const { width, height } = this.cameras.main;
+    const { width, height } = this.scene.cameras.main;
 
     const container = this.scene.add.container(width / 2, height * 0.3);
     container.setScrollFactor(0);

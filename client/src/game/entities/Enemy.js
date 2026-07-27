@@ -228,9 +228,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   remove() {
-    if (!this.isAlive) return;
-    this.isAlive = false;
-    if (this.scene && this.scene.enemyGroup) {
+    if (!this.scene) return;
+    if (this.scene.enemyGroup) {
       this.scene.enemyGroup.remove(this, true, true);
     }
     this.destroy();

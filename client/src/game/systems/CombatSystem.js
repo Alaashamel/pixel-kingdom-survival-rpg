@@ -26,7 +26,7 @@ export default class CombatSystem {
       alpha: 0,
       scaleX: 1.3,
       scaleY: 1.3,
-      duration: 200,
+      duration: 120,
       onComplete: () => slash.destroy(),
     });
 

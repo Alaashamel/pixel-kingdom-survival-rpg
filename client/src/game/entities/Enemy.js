@@ -15,7 +15,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.attackRange = config.attackRange || 40;
     this.attackCooldown = config.attackCooldown || 1000;
     this.xpReward = config.xpReward || 25;
-    this.detectionRange = config.detectionRange || 200;
+    this.detectionRange = config.detectionRange || 250;
     this.enemyType = config.enemyType || "slime";
 
     this.lastAttackTime = 0;
@@ -79,7 +79,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (dist < this.detectionRange) {
       this.isChasing = true;
 
-      if (dist > 16) {
+      if (dist > 10) {
         const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
         this.body.setVelocity(
           Math.cos(angle) * this.speed,

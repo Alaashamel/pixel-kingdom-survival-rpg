@@ -7,6 +7,7 @@ export default class Minimap {
     this.size = 140;
     this.margin = 10;
     this.scale = this.size / WORLD.WIDTH;
+    this.maxDots = 50;
 
     this.container = scene.add.container(0, 0);
     this.container.setScrollFactor(0);
@@ -95,6 +96,12 @@ export default class Minimap {
 
   createEnemyDots() {
     this.enemyDots = [];
+    for (let i = 0; i < this.maxDots; i++) {
+      const dot = this.scene.add.circle(0, 0, 2, COLORS.ENEMY_RED, 0.8);
+      dot.setVisible(false);
+      this.container.add(dot);
+      this.enemyDots.push(dot);
+    }
   }
 
   update(player, enemies) {
@@ -105,20 +112,24 @@ export default class Minimap {
     const playerMapY = mapY + (player.y / WORLD.HEIGHT) * this.size;
     this.playerDot.setPosition(playerMapX, playerMapY);
 
-    this.enemyDots.forEach((dot) => dot.destroy());
-    this.enemyDots = [];
-
+    let dotIndex = 0;
     if (enemies) {
-      [...enemies.getChildren()].forEach((enemy) => {
-        if (!enemy || !enemy.isAlive) return;
+      const children = enemies.getChildren();
+      for (let i = 0; i < children.length && dotIndex < this.maxDots; i++) {
+        const enemy = children[i];
+        if (!enemy || !enemy.isAlive) continue;
 
         const ex = mapX + (enemy.x / WORLD.WIDTH) * this.size;
         const ey = mapY + (enemy.y / WORLD.HEIGHT) * this.size;
 
-        const dot = this.scene.add.circle(ex, ey, 2, COLORS.ENEMY_RED, 0.8);
-        this.container.add(dot);
-        this.enemyDots.push(dot);
-      });
+        this.enemyDots[dotIndex].setPosition(ex, ey);
+        this.enemyDots[dotIndex].setVisible(true);
+        dotIndex++;
+      }
+    }
+
+    for (let i = dotIndex; i < this.maxDots; i++) {
+      this.enemyDots[i].setVisible(false);
     }
   }
 

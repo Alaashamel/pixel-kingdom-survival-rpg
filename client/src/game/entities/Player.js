@@ -89,7 +89,7 @@ class Player extends Phaser.GameObjects.Rectangle {
     this.body.setVelocity(vx * currentSpeed, vy * currentSpeed);
 
     if (this.isSprinting && (vx !== 0 || vy !== 0)) {
-      this.stamina = Math.max(0, this.stamina - 0.5);
+      this.stamina = Math.max(0, this.stamina - 0.3);
     } else {
       this.stamina = Math.min(this.maxStamina, this.stamina + this.staminaRegen);
     }

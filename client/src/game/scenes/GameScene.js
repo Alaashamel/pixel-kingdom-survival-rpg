@@ -55,7 +55,8 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.enemyGroup = this.physics.add.group();
-    this.spawnEnemies();
+    this.wave = 1;
+    this.spawnWave();
 
     this.physics.add.collider(this.player, this.worldSystem.treeGroup);
     this.physics.add.collider(this.player, this.worldSystem.rockGroup);
@@ -64,7 +65,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.enemyGroup, this.enemyGroup);
 
     this.cameras.main.setBounds(0, 0, WORLD.WIDTH, WORLD.HEIGHT);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.roundPixels = true;
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -182,13 +183,17 @@ export default class GameScene extends Phaser.Scene {
     this.input.keyboard.once("keydown", startAudio);
   }
 
-  spawnEnemies() {
-    const enemyConfigs = [
-      { health: 80, speed: 60, damage: 10, xpReward: 20, attackCooldown: 800, count: 15 },
-      { health: 140, speed: 80, damage: 16, xpReward: 35, attackCooldown: 700, count: 8 },
-      { health: 220, speed: 100, damage: 24, xpReward: 50, attackCooldown: 600, count: 4 },
+  getWaveConfigs() {
+    const scale = 1 + (this.wave - 1) * 0.15;
+    return [
+      { health: Math.floor(80 * scale), speed: 80 + this.wave * 5, damage: Math.floor(10 * scale), xpReward: 20 + this.wave * 2, attackCooldown: 800, count: 15 + this.wave * 2 },
+      { health: Math.floor(140 * scale), speed: 100 + this.wave * 5, damage: Math.floor(16 * scale), xpReward: 35 + this.wave * 3, attackCooldown: 700, count: 8 + this.wave },
+      { health: Math.floor(220 * scale), speed: 120 + this.wave * 5, damage: Math.floor(24 * scale), xpReward: 50 + this.wave * 4, attackCooldown: 600, count: 4 + Math.floor(this.wave / 2) },
     ];
+  }
 
+  spawnWave() {
+    const enemyConfigs = this.getWaveConfigs();
     const margin = 300;
     const centerX = WORLD.WIDTH / 2;
     const centerY = WORLD.HEIGHT / 2;
@@ -220,7 +225,73 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    this.spawnBoss();
+    if (this.wave === 1) {
+      this.spawnBoss();
+    }
+
+    this.showWaveAnnouncement();
+  }
+
+  showWaveAnnouncement() {
+    const { width, height } = this.cameras.main;
+    const text = this.add.text(width / 2, height * 0.35, `WAVE ${this.wave}`, {
+      fontSize: "40px",
+      fill: "#ff6600",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 4,
+    });
+    text.setOrigin(0.5);
+    text.setScrollFactor(0);
+    text.setDepth(300);
+    text.setAlpha(0);
+
+    const subtext = this.add.text(width / 2, height * 0.35 + 40, `${this.getAliveEnemyCount()} enemies incoming`, {
+      fontSize: "16px",
+      fill: "#ffffff",
+      fontFamily: "monospace",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    subtext.setOrigin(0.5);
+    subtext.setScrollFactor(0);
+    subtext.setDepth(300);
+    subtext.setAlpha(0);
+
+    this.tweens.add({
+      targets: [text, subtext],
+      alpha: 1,
+      duration: 400,
+      ease: "Power2",
+      onComplete: () => {
+        this.tweens.add({
+          targets: [text, subtext],
+          alpha: 0,
+          duration: 600,
+          delay: 1500,
+          ease: "Power2",
+          onComplete: () => { text.destroy(); subtext.destroy(); },
+        });
+      },
+    });
+
+    this.cameras.main.flash(200, 255, 102, 0, true);
+  }
+
+  getAliveEnemyCount() {
+    return this.enemyGroup.getChildren().filter((e) => e && e.isAlive).length;
+  }
+
+  checkWaveComplete() {
+    if (this.getAliveEnemyCount() === 0 && !this.wavePending) {
+      this.wavePending = true;
+      this.time.delayedCall(3000, () => {
+        this.wave++;
+        this.spawnWave();
+        this.wavePending = false;
+      });
+    }
   }
 
   spawnBoss() {
@@ -333,7 +404,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.player.isAttacking = true;
-    this.time.delayedCall(200, () => {
+    this.time.delayedCall(150, () => {
       this.player.isAttacking = false;
     });
   }
@@ -406,7 +477,18 @@ export default class GameScene extends Phaser.Scene {
     this.levelText.setScrollFactor(0);
     this.levelText.setDepth(100);
 
-    this.enemyCountText = this.add.text(this.cameras.main.width - 16, 36, "Enemies: 27", {
+    this.waveText = this.add.text(this.cameras.main.width - 16, 36, "Wave 1", {
+      fontSize: "12px",
+      fill: "#ff9900",
+      fontFamily: "monospace",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
+    this.waveText.setOrigin(1, 0);
+    this.waveText.setScrollFactor(0);
+    this.waveText.setDepth(100);
+
+    this.enemyCountText = this.add.text(this.cameras.main.width - 16, 52, "Enemies: 0", {
       fontSize: "12px",
       fill: "#ff6666",
       fontFamily: "monospace",
@@ -545,6 +627,7 @@ export default class GameScene extends Phaser.Scene {
     this.weatherSystem.update(this.time.now);
     this.minimap.update(this.player, this.enemyGroup);
     this.updateHUD();
+    this.checkWaveComplete();
   }
 
   updateHUD() {
@@ -564,8 +647,9 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.levelText.setText(`Lv. ${this.player.level}`);
+    this.waveText.setText(`Wave ${this.wave}`);
 
-    const aliveEnemies = this.enemyGroup.getChildren().filter((e) => e.isAlive).length;
+    const aliveEnemies = this.getAliveEnemyCount();
     this.enemyCountText.setText(`Enemies: ${aliveEnemies}`);
   }
 }

@@ -123,6 +123,10 @@ export default class QuestSystem {
       this.onQuestComplete(questId, quest);
     }
 
+    if (this.onRewardGranted) {
+      this.onRewardGranted(quest.reward);
+    }
+
     this.checkNewQuests();
   }
 

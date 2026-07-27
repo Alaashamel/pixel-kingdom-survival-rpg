@@ -150,6 +150,7 @@ export default class SaveLoadUI {
       attackDamage: p.attackDamage,
       x: p.x,
       y: p.y,
+      gold: p.gold || 0,
     });
 
     if (success) {
@@ -174,6 +175,7 @@ export default class SaveLoadUI {
     p.xpToNextLevel = data.player.xpToNextLevel;
     p.attackDamage = data.player.attackDamage;
     p.setPosition(data.player.x, data.player.y);
+    if (data.player.gold) p.gold = data.player.gold;
 
     this.close();
   }

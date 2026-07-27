@@ -50,6 +50,10 @@ export const COLORS = {
   MANA_BAR: 0x42a5f5,
   STAMINA_BAR: 0xffee58,
   XP_BAR: 0x00e676,
+  GOLD: 0xffd700,
+  GOLD_DARK: 0xdaa520,
+  NPC: 0x5c6bc0,
+  NPC_DARK: 0x3949ab,
 };
 
 export const SCENES = {

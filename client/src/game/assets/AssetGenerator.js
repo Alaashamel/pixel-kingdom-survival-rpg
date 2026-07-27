@@ -21,6 +21,7 @@ export default class AssetGenerator {
     this.generateStump();
     this.generateEnemySlime();
     this.generateEnemySkeleton();
+    this.generateShopkeeper();
     this.generateParticles();
     this.generateUIElements();
   }
@@ -308,6 +309,41 @@ export default class AssetGenerator {
     g.fillCircle(12, 12, 4);
 
     g.generateTexture("stump", 24, 24);
+    g.destroy();
+  }
+
+  generateShopkeeper() {
+    const g = this.scene.make.graphics({ x: 0, y: 0, add: false });
+
+    g.fillStyle(0x5c6bc0);
+    g.fillRect(6, 14, 20, 16);
+
+    g.fillStyle(0x3949ab);
+    g.fillRect(6, 14, 20, 3);
+    g.fillRect(6, 14, 3, 16);
+
+    g.fillStyle(0xffcc80);
+    g.fillRect(10, 4, 12, 12);
+
+    g.fillStyle(0x000000);
+    g.fillRect(12, 8, 2, 2);
+    g.fillRect(18, 8, 2, 2);
+
+    g.fillStyle(0xffffff);
+    g.fillRect(11, 7, 3, 3);
+    g.fillRect(18, 7, 3, 3);
+
+    g.fillStyle(0x5c6bc0);
+    g.fillRect(4, 30, 10, 2);
+    g.fillRect(18, 30, 10, 2);
+
+    g.fillStyle(0xffd700);
+    g.fillCircle(16, 20, 4);
+
+    g.fillStyle(0xdaa520);
+    g.fillRect(14, 18, 4, 4);
+
+    g.generateTexture("shopkeeper", 32, 32);
     g.destroy();
   }
 

@@ -25,6 +25,10 @@ export default class GameScene extends Phaser.Scene {
     super(SCENES.GAME);
   }
 
+  init(data) {
+    this.returnData = data || {};
+  }
+
   create() {
     this.combatSystem = new CombatSystem(this);
     this.particleSystem = new ParticleSystem(this);
@@ -48,6 +52,13 @@ export default class GameScene extends Phaser.Scene {
     this.worldSystem.create();
 
     this.player = new Player(this, WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+
+    if (this.returnData.returnFromDungeon) {
+      const dungX = WORLD.WIDTH * 0.8;
+      const dungY = WORLD.HEIGHT * 0.8;
+      this.player.setPosition(dungX, dungY + 80);
+      if (this.returnData.gold !== undefined) this.player.gold = this.returnData.gold;
+    }
     this.player.onLevelUp = (level) => {
       this.levelUpNotification.show(level);
       this.playSound("playLevelUp");
@@ -553,106 +564,33 @@ export default class GameScene extends Phaser.Scene {
     return dist < 80;
   }
 
-  performWhirlwind() {
-    if (!this.player.isAlive) return;
-    if (this.player.mana < 10) return;
-
-    const now = this.time.now;
-    if (this._lastWhirlwindTime && now - this._lastWhirlwindTime < 2000) return;
-    this._lastWhirlwindTime = now;
-    this.player.mana -= 10;
-
-    this.playSound("playAttack");
-
-    const whirlRadius = 120;
-    const spin = this.add.circle(this.player.x, this.player.y, whirlRadius, 0xffffff, 0.3);
-    spin.setDepth(11);
-    spin.setStrokeStyle(3, 0xffee58);
-
-    this.tweens.add({
-      targets: spin,
-      scaleX: 1.5,
-      scaleY: 1.5,
-      alpha: 0,
-      duration: 400,
-      onComplete: () => spin.destroy(),
-    });
-
-    this.tweens.add({
-      targets: this.player,
-      angle: 360,
-      duration: 300,
-      onComplete: () => { this.player.angle = 0; },
-    });
-
-    [...this.enemyGroup.getChildren()].forEach((enemy) => {
-      if (!enemy || !enemy.isAlive) return;
-      const dist = Phaser.Math.Distance.Between(
-        this.player.x, this.player.y, enemy.x, enemy.y
-      );
-      if (dist < whirlRadius + 20) {
-        const isCritical = Math.random() < (this.player.critChance || 0.15);
-        const damage = isCritical
-          ? Math.floor(this.player.attackDamage * 1.2 * 1.8)
-          : Math.floor(this.player.attackDamage * 1.2);
-
-        enemy.takeDamage(damage);
-        this.combatSystem.knockback(enemy, this.player, 200);
-        this.particleSystem.emitDamageParticles(enemy.x, enemy.y, damage, isCritical);
-
-        if (isCritical) {
-          this.playSound("playCriticalHit");
-        } else {
-          this.playSound("playHit");
-        }
-      }
-    });
-
-    if (this.boss && this.boss.isAlive) {
-      const bossDist = Phaser.Math.Distance.Between(
-        this.player.x, this.player.y, this.boss.x, this.boss.y
-      );
-      if (bossDist < whirlRadius + 30) {
-        const dmg = Math.floor(this.player.attackDamage * 1.2);
-        this.boss.takeDamage(dmg);
-        this.combatSystem.showDamageNumber(this.boss.x, this.boss.y, dmg, false);
-        this.playSound("playHit");
-      }
-    }
+  isNearDungeon() {
+    const dungX = WORLD.WIDTH * 0.8;
+    const dungY = WORLD.HEIGHT * 0.8;
+    const dist = Phaser.Math.Distance.Between(
+      this.player.x, this.player.y, dungX, dungY
+    );
+    return dist < 60;
   }
 
-  performDash() {
-    if (!this.player.isAlive) return;
-    if (this._dashCooldown) return;
-
-    this._dashCooldown = true;
-    this.time.delayedCall(800, () => { this._dashCooldown = false; });
-
-    const facingToAngle = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
-    const angle = facingToAngle[this.player.facing] || 0;
-    const dashDist = 180;
-
-    const targetX = this.player.x + Math.cos(angle) * dashDist;
-    const targetY = this.player.y + Math.sin(angle) * dashDist;
-
-    this.tweens.add({
-      targets: this.player,
-      x: targetX,
-      y: targetY,
-      duration: 150,
-      ease: "Power2",
-      onStart: () => {
-        this.player.body.enable = false;
-        this.player.setAlpha(0.5);
-      },
-      onComplete: () => {
-        this.player.body.enable = true;
-        this.player.setAlpha(1);
-        this.player.body.reset(targetX, targetY);
-      },
+  enterDungeon() {
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => {
+      this.scene.start("DungeonScene", {
+        playerData: {
+          health: this.player.health,
+          maxHealth: this.player.maxHealth,
+          mana: this.player.mana,
+          maxMana: this.player.maxMana,
+          attackDamage: this.player.attackDamage,
+          level: this.player.level,
+          critChance: this.player.critChance,
+          damageReduction: this.player.damageReduction,
+          gold: this.player.gold,
+        },
+        wave: this.wave,
+      });
     });
-
-    this.particleSystem.emitAttackParticles(this.player.x, this.player.y, this.player.facing);
   }
 
   createHUD() {
@@ -848,7 +786,11 @@ export default class GameScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.rangedKey)) {
-      this.performRangedAttack();
+      if (this.isNearDungeon()) {
+        this.enterDungeon();
+      } else {
+        this.performRangedAttack();
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.whirlwindKey) && this.game.skillTree?.hasSkill("whirlwind")) {
@@ -922,6 +864,8 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.isNearShopkeeper() && !this.shopUI.isOpen) {
       this.shopHint.setText("Press B to open Shop");
+    } else if (this.isNearDungeon()) {
+      this.shopHint.setText("Press E to enter Dungeon");
     } else {
       this.shopHint.setText("");
     }

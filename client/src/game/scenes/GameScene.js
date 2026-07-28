@@ -91,11 +91,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.rangedKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.whirlwindKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.inventoryKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
-
-    this._lastShiftTime = 0;
-    this._dashCooldown = false;
 
     this.createHUD();
 
@@ -197,7 +193,6 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    this.shopKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
     this.input.keyboard.on("keydown-B", () => {
       if (!this.isPaused && !this.saveLoadUI.isOpen && !this.skillTreeUI.isOpen && !this.inventoryPanel.isOpen && !this.questUI.isLogOpen) {
         if (this.shopUI.isOpen) {
@@ -719,7 +714,7 @@ export default class GameScene extends Phaser.Scene {
     controlsBg.setScrollFactor(0);
     controlsBg.setDepth(99);
 
-    const controlsText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 24, "WASD Move  |  SPACE Attack  |  E Ranged  |  Q Whirlwind  |  SHIFT Dash  |  B Shop  |  I Inventory  |  F5 Save", {
+    const controlsText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 24,       "WASD Move  |  SPACE Attack  |  E Ranged  |  B Shop  |  I Inventory  |  F5 Save", {
       fontSize: "11px",
       fill: "#cccccc",
       fontFamily: "monospace",
@@ -822,14 +817,6 @@ export default class GameScene extends Phaser.Scene {
       } else {
         this.performRangedAttack();
       }
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.whirlwindKey) && this.game.skillTree?.hasSkill("whirlwind")) {
-      this.performWhirlwind();
-    }
-
-    if (this.game.skillTree?.hasSkill("dash") && Phaser.Input.Keyboard.JustDown(this.cursors.shift)) {
-      this.performDash();
     }
 
     const enemies = [...this.enemyGroup.getChildren()];
